@@ -12,28 +12,10 @@ import {
   FlatList,
   Modal,
   Easing,
-  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Responsive Design Utils
-const getResponsiveSize = () => {
-  const { width, height } = Dimensions.get('window');
-  const shortDimension = Math.min(width, height);
-  const longDimension = Math.max(width, height);
-  
-  return {
-    width,
-    height,
-    shortDimension,
-    longDimension,
-    isTablet: shortDimension >= 600, // iPad Mini gibi tabletler
-    isLandscape: width > height,
-    scale: shortDimension / 375, // iPhone 11 Pro base scale
-  };
-};
 
 const { width, height } = Dimensions.get('window');
 
@@ -123,7 +105,7 @@ const generateQuestion = (level = 1) => {
 };
 
 // SPEED LINES BİLEŞENİ
-const SpeedLines = ({ boost = false, styles }) => {
+const SpeedLines = ({ boost = false }) => {
   const lines = useRef([...Array(8)].map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
@@ -168,7 +150,7 @@ const SpeedLines = ({ boost = false, styles }) => {
 };
 
 // PARTİKÜL SİSTEMİ
-const ParticleSystem = ({ active = false, type = 'dust', styles }) => {
+const ParticleSystem = ({ active = false, type = 'dust' }) => {
   const particles = useRef([...Array(12)].map(() => ({
     x: new Animated.Value(0),
     y: new Animated.Value(0),
@@ -241,7 +223,7 @@ const ParticleSystem = ({ active = false, type = 'dust', styles }) => {
 };
 
 // PARALAKS DAĞLAR
-const ParallaxMountains = ({ styles }) => {
+const ParallaxMountains = () => {
   const scroll = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -272,7 +254,7 @@ const ParallaxMountains = ({ styles }) => {
 };
 
 // GELİŞMİŞ DEKORASYONLAR
-const TrackDecorations = ({ styles }) => {
+const TrackDecorations = () => {
   const [wave, setWave] = useState(0);
 
   useEffect(() => {
@@ -301,7 +283,7 @@ const TrackDecorations = ({ styles }) => {
 };
 
 // YARIŞ PROGRESS BAR
-const RaceProgressBar = ({ playerPosition, opponentPosition, styles }) => {
+const RaceProgressBar = ({ playerPosition, opponentPosition }) => {
   return (
     <View style={styles.progressBar}>
       <View style={styles.progressTrack}>
@@ -331,7 +313,7 @@ const RaceProgressBar = ({ playerPosition, opponentPosition, styles }) => {
 };
 
 // Hot Wheels Araba Bileşeni (GÖLGELİ VERSİYON)
-const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true, styles }) => {
+const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true }) => {
   const wheelRotate = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -396,8 +378,8 @@ const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true, style
         styles.hotWheelsCar,
         { transform: [{ translateY: bounceAnim }] }
       ]}>
-        {boost && <ParticleSystem active={boost} type="fire" styles={styles} />}
-        <ParticleSystem active={true} type="dust" styles={styles} />
+        {boost && <ParticleSystem active={boost} type="fire" />}
+        <ParticleSystem active={true} type="dust" />
         
         <LinearGradient
           colors={[car.color, car.secondaryColor]}
@@ -436,7 +418,7 @@ const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true, style
 
         {boost && (
           <View style={styles.sparkles}>
-            <ParticleSystem active={boost} type="spark" styles={styles} />
+            <ParticleSystem active={boost} type="spark" />
           </View>
         )}
       </Animated.View>
@@ -445,7 +427,7 @@ const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true, style
 };
 
 // Gelişmiş Pist Bileşeni
-const RaceTrack = ({ styles }) => {
+const RaceTrack = () => {
   const cloudAnim = useRef(new Animated.Value(0)).current;
   const treeAnim = useRef(new Animated.Value(0)).current;
 
@@ -482,7 +464,7 @@ const RaceTrack = ({ styles }) => {
   return (
     <View style={styles.trackEnvironment}>
       {/* Paralaks Dağlar */}
-      <ParallaxMountains styles={styles} />
+      <ParallaxMountains />
       
       {/* Bulutlar */}
       <Animated.View style={[styles.clouds, { transform: [{ translateX: cloudTranslate }] }]}>
@@ -508,7 +490,7 @@ const RaceTrack = ({ styles }) => {
 };
 
 // Seyirci Bileşeni
-const AnimatedCrowd = ({ styles }) => {
+const AnimatedCrowd = () => {
   const [waveIndex, setWaveIndex] = useState(0);
 
   useEffect(() => {
@@ -536,10 +518,6 @@ const AnimatedCrowd = ({ styles }) => {
 };
 
 export default function App() {
-  // Responsive state
-  const [dimensions, setDimensions] = useState(getResponsiveSize());
-  const styles = createStyles(dimensions); // Dinamik styles
-  
   // Oyun Durumu
   const [gameScreen, setGameScreen] = useState('welcome');
   const [username, setUsername] = useState('');
@@ -585,12 +563,6 @@ export default function App() {
     loadLeaderboard();
     setupAudio();
     loadSoundEffects();
-    
-    // Orientation change listener
-    const subscription = Dimensions.addEventListener('change', () => {
-      setDimensions(getResponsiveSize());
-    });
-    
     return () => {
       // Cleanup müzik
       if (backgroundMusic) {
@@ -600,8 +572,6 @@ export default function App() {
       Object.values(soundEffects).forEach(sound => {
         if (sound) sound.unloadAsync();
       });
-      // Cleanup dimension listener
-      subscription?.remove();
     };
   }, []);
 
@@ -1068,8 +1038,7 @@ export default function App() {
             
             <FlatList
               data={HOT_WHEELS_CARS}
-              numColumns={dimensions.isTablet ? 3 : 2}
-              key={dimensions.isTablet ? 'tablet' : 'mobile'} // Key değişirse FlatList yeniden render olur
+              numColumns={2}
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => {
                 const isUnlocked = unlockedCars.includes(item.id);
@@ -1189,273 +1158,131 @@ export default function App() {
             </TouchableOpacity>
           </View>
 
-          {/* Landscape için özel layout */}
-          {dimensions.isLandscape ? (
-            // LANDSCAPE MODE - Sağda yarış, solda soru
-            <View style={{ flex: 1, flexDirection: 'row' }}>
-              {/* Sol: Soru Paneli */}
-              <View style={{ width: '35%', padding: 10, justifyContent: 'center' }}>
-                <View style={styles.questionPanel}>
-                  <LinearGradient colors={['#FFD93D', '#FFF4A3']} style={styles.questionCard}>
-                    <View style={styles.questionHeader}>
-                      <Text style={styles.questionIcon}>🧮</Text>
-                      <Text style={styles.questionTitle}>Çarpım Sorusu!</Text>
-                      <Text style={styles.questionIcon}>🧮</Text>
-                    </View>
-                    
-                    <View style={styles.questionDisplay}>
-                      <Text style={styles.questionNumber}>{question.num1}</Text>
-                      <Text style={styles.questionOperator}>×</Text>
-                      <Text style={styles.questionNumber}>{question.num2}</Text>
-                      <Text style={styles.questionOperator}>=</Text>
-                      <Text style={styles.questionMark}>?</Text>
-                    </View>
-                    
-                    {consecutiveCorrect > 1 && (
-                      <View style={styles.streakBadge}>
-                        <Text style={styles.streakText}>🔥 {consecutiveCorrect} Kombo!</Text>
-                      </View>
-                    )}
-                  </LinearGradient>
+          {/* Yarış Progress Bar */}
+          <RaceProgressBar 
+            playerPosition={playerPosition} 
+            opponentPosition={opponentPosition} 
+          />
 
-                  <View style={[styles.answersGrid, { flexDirection: 'column' }]}>
-                    {question.answers.map((answer, index) => {
-                      const isSelected = selectedAnswer === answer;
-                      const isCorrect = answer === question.correctAnswer;
-                      const showResult = showFeedback && isSelected;
-                      
-                      return (
-                        <TouchableOpacity
-                          key={index}
-                          style={styles.answerButton}
-                          onPress={() => handleAnswer(answer)}
-                          disabled={showFeedback}
-                        >
-                          <LinearGradient
-                            colors={
-                              showResult && isCorrect
-                                ? ['#4CAF50', '#45B649']
-                                : showResult && !isCorrect
-                                ? ['#EF5350', '#E53935']
-                                : ['#FF6B6B', '#FF8E53']
-                            }
-                            style={styles.answerGradient}
-                          >
-                            <Text style={styles.answerText}>{answer}</Text>
-                            {showResult && (
-                              <Text style={styles.answerEmoji}>{isCorrect ? '✅' : '❌'}</Text>
-                            )}
-                          </LinearGradient>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
+          {/* Yarış Alanı */}
+          <View style={styles.raceArea}>
+            <RaceTrack />
+            <SpeedLines boost={playerBoost} />
+            <TrackDecorations />
+            
+            <View style={styles.topCrowd}>
+              <AnimatedCrowd />
+            </View>
+
+            <View style={styles.trackContainer}>
+              <View style={styles.startLine}>
+                <Text style={styles.startText}>START</Text>
+                <Text style={styles.startFlag}>🏁</Text>
               </View>
 
-              {/* Sağ: Yarış Alanı */}
-              <View style={{ flex: 1 }}>
-                <RaceProgressBar 
-                  playerPosition={playerPosition} 
-                  opponentPosition={opponentPosition}
-                  styles={styles}
-                />
+              {/* Rakip Lane */}
+              <View style={styles.topLane}>
+                <Animated.View style={[styles.carWrapper, { left: `${opponentPosition}%` }]}>
+                  <HotWheelsCar
+                    car={{
+                      ...HOT_WHEELS_CARS[1], // Blue Lightning (AI her zaman 2. arabayı kullanır)
+                      color: '#FF6B9D',
+                      secondaryColor: '#C71585',
+                      name: 'AI Racer'
+                    }}
+                    isPlayer={false}
+                  />
+                  <Text style={styles.carLabel}>AI Rakip</Text>
+                </Animated.View>
+              </View>
 
-                <View style={styles.raceArea}>
-                  <RaceTrack styles={styles} />
-                  <SpeedLines boost={playerBoost} styles={styles} />
-                  <TrackDecorations styles={styles} />
-                  
-                  <View style={styles.topCrowd}>
-                    <AnimatedCrowd styles={styles} />
-                  </View>
+              <View style={styles.centerDivider} />
 
-                  <View style={styles.trackContainer}>
-                    <View style={styles.startLine}>
-                      <Text style={styles.startText}>START</Text>
-                      <Text style={styles.startFlag}>🏁</Text>
-                    </View>
+              {/* Oyuncu Lane */}
+              <View style={styles.bottomLane}>
+                <Animated.View
+                  style={[
+                    styles.carWrapper,
+                    {
+                      left: `${playerPosition}%`,
+                      transform: [{ translateX: shakeAnim }],
+                    },
+                  ]}
+                >
+                  <HotWheelsCar car={selectedCar} boost={playerBoost} isPlayer={true} />
+                  <Text style={styles.carLabel}>{username}</Text>
+                </Animated.View>
+              </View>
 
-                    {/* Rakip Lane */}
-                    <View style={styles.topLane}>
-                      <Animated.View style={[styles.carWrapper, { left: `${opponentPosition}%` }]}>
-                        <HotWheelsCar
-                          car={{
-                            ...HOT_WHEELS_CARS[1],
-                            color: '#FF6B9D',
-                            secondaryColor: '#C71585',
-                            name: 'AI Racer'
-                          }}
-                          isPlayer={false}
-                          styles={styles}
-                        />
-                        <Text style={styles.carLabel}>AI Rakip</Text>
-                      </Animated.View>
-                    </View>
-
-                    <View style={styles.centerDivider} />
-
-                    {/* Oyuncu Lane */}
-                    <View style={styles.bottomLane}>
-                      <Animated.View
-                        style={[
-                          styles.carWrapper,
-                          {
-                            left: `${playerPosition}%`,
-                            transform: [{ translateX: shakeAnim }],
-                          },
-                        ]}
-                      >
-                        <HotWheelsCar car={selectedCar} boost={playerBoost} isPlayer={true} styles={styles} />
-                        <Text style={styles.carLabel}>{username}</Text>
-                      </Animated.View>
-                    </View>
-
-                    <View style={styles.finishLine}>
-                      <Text style={styles.finishFlag}>🏁</Text>
-                      <Text style={styles.finishText}>FİNİŞ</Text>
-                      <Text style={styles.finishFlag}>🏁</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.bottomCrowd}>
-                    <AnimatedCrowd styles={styles} />
-                  </View>
-                </View>
+              <View style={styles.finishLine}>
+                <Text style={styles.finishFlag}>🏁</Text>
+                <Text style={styles.finishText}>FİNİŞ</Text>
+                <Text style={styles.finishFlag}>🏁</Text>
               </View>
             </View>
-          ) : (
-            // PORTRAIT MODE - Üstte yarış, altta soru (orijinal)
-            <>
-              {/* Yarış Progress Bar */}
-              <RaceProgressBar 
-                playerPosition={playerPosition} 
-                opponentPosition={opponentPosition}
-                styles={styles}
-              />
 
-              {/* Yarış Alanı */}
-              <View style={styles.raceArea}>
-                <RaceTrack styles={styles} />
-                <SpeedLines boost={playerBoost} styles={styles} />
-                <TrackDecorations styles={styles} />
+            <View style={styles.bottomCrowd}>
+              <AnimatedCrowd />
+            </View>
+          </View>
+
+          {/* Soru Paneli */}
+          <View style={styles.questionPanel}>
+            <LinearGradient colors={['#FFD93D', '#FFF4A3']} style={styles.questionCard}>
+              <View style={styles.questionHeader}>
+                <Text style={styles.questionIcon}>🧮</Text>
+                <Text style={styles.questionTitle}>Çarpım Sorusu!</Text>
+                <Text style={styles.questionIcon}>🧮</Text>
+              </View>
+              
+              <View style={styles.questionDisplay}>
+                <Text style={styles.questionNumber}>{question.num1}</Text>
+                <Text style={styles.questionOperator}>×</Text>
+                <Text style={styles.questionNumber}>{question.num2}</Text>
+                <Text style={styles.questionOperator}>=</Text>
+                <Text style={styles.questionMark}>?</Text>
+              </View>
+              
+              {consecutiveCorrect > 1 && (
+                <View style={styles.streakBadge}>
+                  <Text style={styles.streakText}>🔥 {consecutiveCorrect} Kombo!</Text>
+                </View>
+              )}
+            </LinearGradient>
+
+            <View style={styles.answersGrid}>
+              {question.answers.map((answer, index) => {
+                const isSelected = selectedAnswer === answer;
+                const isCorrect = answer === question.correctAnswer;
+                const showResult = showFeedback && isSelected;
                 
-                <View style={styles.topCrowd}>
-                  <AnimatedCrowd />
-                </View>
-
-                <View style={styles.trackContainer}>
-                  <View style={styles.startLine}>
-                    <Text style={styles.startText}>START</Text>
-                    <Text style={styles.startFlag}>🏁</Text>
-                  </View>
-
-                  {/* Rakip Lane */}
-                  <View style={styles.topLane}>
-                    <Animated.View style={[styles.carWrapper, { left: `${opponentPosition}%` }]}>
-                      <HotWheelsCar
-                        car={{
-                          ...HOT_WHEELS_CARS[1], // Blue Lightning (AI her zaman 2. arabayı kullanır)
-                          color: '#FF6B9D',
-                          secondaryColor: '#C71585',
-                          name: 'AI Racer'
-                        }}
-                        isPlayer={false}
-                        styles={styles}
-                      />
-                      <Text style={styles.carLabel}>AI Rakip</Text>
-                    </Animated.View>
-                  </View>
-
-                  <View style={styles.centerDivider} />
-
-                  {/* Oyuncu Lane */}
-                  <View style={styles.bottomLane}>
-                    <Animated.View
-                      style={[
-                        styles.carWrapper,
-                        {
-                          left: `${playerPosition}%`,
-                          transform: [{ translateX: shakeAnim }],
-                        },
-                      ]}
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.answerButton}
+                    onPress={() => handleAnswer(answer)}
+                    disabled={showFeedback}
+                  >
+                    <LinearGradient
+                      colors={
+                        showResult && isCorrect
+                          ? ['#4CAF50', '#45B649']
+                          : showResult && !isCorrect
+                          ? ['#EF5350', '#E53935']
+                          : ['#FF6B6B', '#FF8E53']
+                      }
+                      style={styles.answerGradient}
                     >
-                      <HotWheelsCar car={selectedCar} boost={playerBoost} isPlayer={true} styles={styles} />
-                      <Text style={styles.carLabel}>{username}</Text>
-                    </Animated.View>
-                  </View>
-
-                  <View style={styles.finishLine}>
-                    <Text style={styles.finishFlag}>🏁</Text>
-                    <Text style={styles.finishText}>FİNİŞ</Text>
-                    <Text style={styles.finishFlag}>🏁</Text>
-                  </View>
-                </View>
-
-                <View style={styles.bottomCrowd}>
-                  <AnimatedCrowd />
-                </View>
-              </View>
-
-              {/* Soru Paneli */}
-              <View style={styles.questionPanel}>
-                <LinearGradient colors={['#FFD93D', '#FFF4A3']} style={styles.questionCard}>
-                  <View style={styles.questionHeader}>
-                    <Text style={styles.questionIcon}>🧮</Text>
-                    <Text style={styles.questionTitle}>Çarpım Sorusu!</Text>
-                    <Text style={styles.questionIcon}>🧮</Text>
-                  </View>
-                  
-                  <View style={styles.questionDisplay}>
-                    <Text style={styles.questionNumber}>{question.num1}</Text>
-                    <Text style={styles.questionOperator}>×</Text>
-                    <Text style={styles.questionNumber}>{question.num2}</Text>
-                    <Text style={styles.questionOperator}>=</Text>
-                    <Text style={styles.questionMark}>?</Text>
-                  </View>
-                  
-                  {consecutiveCorrect > 1 && (
-                    <View style={styles.streakBadge}>
-                      <Text style={styles.streakText}>🔥 {consecutiveCorrect} Kombo!</Text>
-                    </View>
-                  )}
-                </LinearGradient>
-
-                <View style={styles.answersGrid}>
-                  {question.answers.map((answer, index) => {
-                    const isSelected = selectedAnswer === answer;
-                    const isCorrect = answer === question.correctAnswer;
-                    const showResult = showFeedback && isSelected;
-                    
-                    return (
-                      <TouchableOpacity
-                        key={index}
-                        style={styles.answerButton}
-                        onPress={() => handleAnswer(answer)}
-                        disabled={showFeedback}
-                      >
-                        <LinearGradient
-                          colors={
-                            showResult && isCorrect
-                              ? ['#4CAF50', '#45B649']
-                              : showResult && !isCorrect
-                              ? ['#EF5350', '#E53935']
-                              : ['#FF6B6B', '#FF8E53']
-                          }
-                          style={styles.answerGradient}
-                        >
-                          <Text style={styles.answerText}>{answer}</Text>
-                          {showResult && (
-                            <Text style={styles.answerEmoji}>{isCorrect ? '✅' : '❌'}</Text>
-                          )}
-                        </LinearGradient>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            </>
-          )}
+                      <Text style={styles.answerText}>{answer}</Text>
+                      {showResult && (
+                        <Text style={styles.answerEmoji}>{isCorrect ? '✅' : '❌'}</Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
 
           {/* Oyun Sonu */}
           {gameStatus !== 'playing' && (
@@ -1511,39 +1338,7 @@ export default function App() {
   );
 }
 
-// Responsive StyleSheet Generator
-const createStyles = (dimensions) => {
-  const { isTablet, isLandscape, scale, width, height } = dimensions;
-  
-  // Responsive font sizes
-  const fontSize = {
-    tiny: isTablet ? 14 : 11,
-    small: isTablet ? 18 : 14,
-    medium: isTablet ? 24 : 18,
-    large: isTablet ? 32 : 24,
-    xlarge: isTablet ? 48 : 36,
-    xxlarge: isTablet ? 64 : 48,
-    huge: isTablet ? 80 : 56,
-  };
-  
-  // Responsive spacing
-  const spacing = {
-    xs: isTablet ? 8 : 5,
-    sm: isTablet ? 12 : 8,
-    md: isTablet ? 20 : 15,
-    lg: isTablet ? 30 : 20,
-    xl: isTablet ? 40 : 30,
-  };
-  
-  // Responsive sizes
-  const sizes = {
-    buttonHeight: isTablet ? 70 : 50,
-    iconSize: isTablet ? 32 : 24,
-    carWidth: isTablet ? 180 : 130,
-    carHeight: isTablet ? 140 : 110,
-  };
-
-  return StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -1559,29 +1354,29 @@ const createStyles = (dimensions) => {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.lg,
+    padding: 20,
   },
   gameTitle: {
-    fontSize: fontSize.huge,
+    fontSize: 56,
     fontWeight: 'bold',
     color: '#FFF',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 3, height: 3 },
     textShadowRadius: 5,
-    marginBottom: spacing.sm,
+    marginBottom: 10,
   },
   gameSubtitle: {
-    fontSize: fontSize.large,
+    fontSize: 22,
     color: '#FFF',
     fontWeight: '600',
-    marginBottom: spacing.xl,
+    marginBottom: 40,
   },
   welcomeCard: {
     backgroundColor: '#FFF',
-    borderRadius: isTablet ? 35 : 25,
-    padding: spacing.xl,
+    borderRadius: 25,
+    padding: 30,
     width: '100%',
-    maxWidth: isTablet ? 500 : 350,
+    maxWidth: 350,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
@@ -1590,82 +1385,82 @@ const createStyles = (dimensions) => {
     elevation: 15,
   },
   welcomeLabel: {
-    fontSize: fontSize.medium,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: spacing.md,
+    marginBottom: 15,
   },
   usernameInput: {
     width: '100%',
-    height: sizes.buttonHeight,
+    height: 50,
     borderWidth: 3,
     borderColor: '#4ECDC4',
-    borderRadius: spacing.md,
-    paddingHorizontal: spacing.lg,
-    fontSize: fontSize.medium,
-    marginBottom: spacing.lg,
+    borderRadius: 15,
+    paddingHorizontal: 20,
+    fontSize: 18,
+    marginBottom: 25,
     backgroundColor: '#F5F5F5',
   },
   startButton: {
     width: '100%',
-    borderRadius: isTablet ? 30 : 25,
+    borderRadius: 25,
     overflow: 'hidden',
-    marginBottom: spacing.md,
+    marginBottom: 15,
   },
   startButtonDisabled: {
     opacity: 0.5,
   },
   startGradient: {
-    paddingVertical: spacing.md,
+    paddingVertical: 18,
     alignItems: 'center',
   },
   startButtonText: {
-    fontSize: fontSize.large,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#FFF',
   },
   leaderboardLinkButton: {
-    paddingVertical: spacing.sm,
+    paddingVertical: 10,
   },
   leaderboardLinkText: {
-    fontSize: fontSize.small,
+    fontSize: 16,
     color: '#4ECDC4',
     fontWeight: 'bold',
   },
   welcomeCars: {
     flexDirection: 'row',
-    gap: spacing.xl,
-    marginTop: spacing.xl,
+    gap: 30,
+    marginTop: 40,
   },
   welcomeCarEmoji: {
-    fontSize: isTablet ? 64 : 48,
+    fontSize: 48,
   },
 
   // Car Select Screen (aynı)
   carSelectContainer: {
     flex: 1,
-    padding: spacing.lg,
+    padding: 20,
   },
   carSelectTitle: {
-    fontSize: fontSize.xlarge,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#FFF',
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: 10,
   },
   carSelectCoins: {
-    fontSize: fontSize.large,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#FFD700',
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: 20,
   },
   carCard: {
     flex: 1,
-    margin: spacing.sm,
-    borderRadius: spacing.lg,
+    margin: 8,
+    borderRadius: 20,
     overflow: 'hidden',
-    minHeight: isTablet ? 240 : 180,
+    minHeight: 180,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -1673,7 +1468,7 @@ const createStyles = (dimensions) => {
     elevation: 8,
   },
   carCardSelected: {
-    borderWidth: isTablet ? 6 : 4,
+    borderWidth: 4,
     borderColor: '#FFD700',
   },
   carCardLocked: {
@@ -1681,67 +1476,67 @@ const createStyles = (dimensions) => {
   },
   carCardGradient: {
     flex: 1,
-    padding: spacing.md,
+    padding: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
   carCardEmoji: {
-    fontSize: isTablet ? 64 : 48,
-    marginBottom: spacing.sm,
+    fontSize: 48,
+    marginBottom: 10,
   },
   carCardName: {
-    fontSize: fontSize.small,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#FFF',
     textAlign: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: 5,
   },
   carCardSpeed: {
-    fontSize: fontSize.tiny,
+    fontSize: 14,
     color: '#FFF',
     fontWeight: '600',
   },
   lockBadge: {
     position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
+    top: 10,
+    right: 10,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: spacing.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
   },
   lockText: {
-    fontSize: fontSize.tiny,
+    fontSize: 12,
     color: '#FFF',
     fontWeight: 'bold',
   },
   selectedBadge: {
     position: 'absolute',
-    bottom: spacing.sm,
+    bottom: 10,
     backgroundColor: '#FFD700',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: spacing.sm,
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 10,
   },
   selectedText: {
-    fontSize: fontSize.tiny,
+    fontSize: 14,
     color: '#000',
     fontWeight: 'bold',
   },
   raceButton: {
-    marginTop: spacing.lg,
-    borderRadius: isTablet ? 30 : 25,
+    marginTop: 20,
+    borderRadius: 25,
     overflow: 'hidden',
   },
   raceButtonDisabled: {
     opacity: 0.5,
   },
   raceGradient: {
-    paddingVertical: spacing.lg,
+    paddingVertical: 20,
     alignItems: 'center',
   },
   raceButtonText: {
-    fontSize: fontSize.large,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#FFF',
   },
@@ -1755,57 +1550,57 @@ const createStyles = (dimensions) => {
   },
   leaderboardModal: {
     backgroundColor: '#FFF',
-    borderRadius: isTablet ? 35 : 25,
-    padding: spacing.xl,
+    borderRadius: 25,
+    padding: 25,
     width: width * 0.9,
     maxHeight: height * 0.7,
   },
   leaderboardTitle: {
-    fontSize: fontSize.xlarge,
+    fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: 20,
     color: '#FF6B6B',
   },
   leaderboardItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: 15,
     backgroundColor: '#F5F5F5',
-    borderRadius: spacing.md,
-    marginBottom: spacing.sm,
+    borderRadius: 15,
+    marginBottom: 10,
   },
   leaderboardRank: {
-    fontSize: fontSize.large,
-    width: isTablet ? 70 : 50,
+    fontSize: 24,
+    width: 50,
     fontWeight: 'bold',
   },
   leaderboardName: {
     flex: 1,
-    fontSize: fontSize.medium,
+    fontSize: 18,
     fontWeight: '600',
     color: '#333',
   },
   leaderboardScore: {
-    fontSize: fontSize.small,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#4ECDC4',
   },
   emptyLeaderboard: {
     textAlign: 'center',
-    fontSize: fontSize.small,
+    fontSize: 16,
     color: '#999',
-    padding: spacing.xl,
+    padding: 40,
   },
   closeModalButton: {
-    marginTop: spacing.lg,
+    marginTop: 20,
     backgroundColor: '#FF6B6B',
-    paddingVertical: spacing.md,
-    borderRadius: spacing.md,
+    paddingVertical: 15,
+    borderRadius: 15,
     alignItems: 'center',
   },
   closeModalText: {
-    fontSize: fontSize.medium,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#FFF',
   },
@@ -1815,26 +1610,26 @@ const createStyles = (dimensions) => {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   backButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: spacing.md,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 15,
   },
   backButtonText: {
-    fontSize: fontSize.tiny,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#333',
   },
   musicButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: spacing.md,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -1842,16 +1637,16 @@ const createStyles = (dimensions) => {
     elevation: 5,
   },
   musicButtonText: {
-    fontSize: fontSize.medium,
+    fontSize: 20,
   },
   scoreBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: spacing.md,
-    gap: spacing.xs,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 15,
+    gap: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -1859,10 +1654,10 @@ const createStyles = (dimensions) => {
     elevation: 5,
   },
   scoreEmoji: {
-    fontSize: fontSize.medium,
+    fontSize: 20,
   },
   scoreValue: {
-    fontSize: fontSize.small,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#FF6B6B',
   },
@@ -1870,10 +1665,10 @@ const createStyles = (dimensions) => {
   // Progress Bar
   progressBar: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    marginHorizontal: spacing.sm,
-    marginVertical: spacing.xs,
-    borderRadius: spacing.md,
-    padding: spacing.sm,
+    marginHorizontal: 10,
+    marginVertical: 8,
+    borderRadius: 15,
+    padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
@@ -1881,25 +1676,25 @@ const createStyles = (dimensions) => {
     elevation: 6,
   },
   progressTrack: {
-    height: isTablet ? 50 : 40,
+    height: 40,
     backgroundColor: '#E0E0E0',
-    borderRadius: isTablet ? 25 : 20,
+    borderRadius: 20,
     position: 'relative',
     overflow: 'visible',
   },
   progressMarker: {
     position: 'absolute',
     top: -5,
-    width: isTablet ? 60 : 50,
-    height: isTablet ? 60 : 50,
+    width: 50,
+    height: 50,
     alignItems: 'center',
-    marginLeft: isTablet ? -30 : -25,
+    marginLeft: -25,
   },
   progressEmoji: {
-    fontSize: isTablet ? 36 : 28,
+    fontSize: 28,
   },
   progressLabel: {
-    fontSize: fontSize.tiny,
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#333',
     marginTop: 2,
@@ -1911,14 +1706,14 @@ const createStyles = (dimensions) => {
     alignItems: 'center',
   },
   finishMarkerText: {
-    fontSize: isTablet ? 40 : 32,
+    fontSize: 32,
   },
   distanceInfo: {
-    marginTop: spacing.xs,
+    marginTop: 8,
     alignItems: 'center',
   },
   distanceText: {
-    fontSize: fontSize.tiny,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#FF6B6B',
   },
@@ -1934,8 +1729,8 @@ const createStyles = (dimensions) => {
   },
   speedLine: {
     position: 'absolute',
-    width: isTablet ? 70 : 50,
-    height: isTablet ? 4 : 3,
+    width: 50,
+    height: 3,
     backgroundColor: '#FFF',
     borderRadius: 2,
   },
@@ -1945,28 +1740,28 @@ const createStyles = (dimensions) => {
     position: 'absolute',
     left: -30,
     top: 20,
-    width: isTablet ? 140 : 100,
-    height: isTablet ? 80 : 60,
+    width: 100,
+    height: 60,
   },
   particle: {
     position: 'absolute',
-    fontSize: isTablet ? 20 : 16,
+    fontSize: 16,
   },
 
   // Paralaks Mountains
   mountainsLayer: {
     position: 'absolute',
-    top: spacing.lg,
+    top: 30,
     left: 0,
     flexDirection: 'row',
-    gap: isTablet ? 200 : 150,
+    gap: 150,
     opacity: 0.3,
   },
   mountain: {
     alignItems: 'center',
   },
   mountainEmoji: {
-    fontSize: isTablet ? 80 : 64,
+    fontSize: 64,
   },
 
   // Dekorasyon
@@ -1980,34 +1775,34 @@ const createStyles = (dimensions) => {
   },
   topDecorations: {
     position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
-    right: spacing.sm,
+    top: 10,
+    left: 10,
+    right: 10,
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
   bottomDecorations: {
     position: 'absolute',
-    bottom: spacing.sm,
-    left: spacing.sm,
-    right: spacing.sm,
+    bottom: 10,
+    left: 10,
+    right: 10,
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
   decoration: {
-    fontSize: isTablet ? 32 : 24,
+    fontSize: 24,
     opacity: 0.6,
   },
   decorationActive: {
-    fontSize: isTablet ? 40 : 32,
+    fontSize: 32,
     opacity: 1,
   },
 
   // Race Area
   raceArea: {
     flex: 1,
-    marginHorizontal: spacing.sm,
-    marginVertical: spacing.sm,
+    marginHorizontal: 10,
+    marginVertical: 10,
   },
   trackEnvironment: {
     position: 'absolute',
@@ -2018,36 +1813,36 @@ const createStyles = (dimensions) => {
   },
   clouds: {
     position: 'absolute',
-    top: spacing.lg,
+    top: 20,
     flexDirection: 'row',
-    gap: isTablet ? 100 : 80,
+    gap: 80,
   },
   cloud: {
-    fontSize: isTablet ? 40 : 32,
+    fontSize: 32,
     opacity: 0.7,
   },
   treesTop: {
     position: 'absolute',
-    top: isTablet ? 70 : 50,
+    top: 50,
     flexDirection: 'row',
-    gap: isTablet ? 50 : 40,
+    gap: 40,
   },
   treesBottom: {
     position: 'absolute',
-    bottom: isTablet ? 70 : 50,
+    bottom: 50,
     flexDirection: 'row',
-    gap: isTablet ? 50 : 40,
+    gap: 40,
   },
   tree: {
-    fontSize: isTablet ? 36 : 28,
+    fontSize: 28,
   },
   topCrowd: {
-    height: isTablet ? 50 : 40,
-    marginBottom: spacing.xs,
+    height: 40,
+    marginBottom: 5,
   },
   bottomCrowd: {
-    height: isTablet ? 50 : 40,
-    marginTop: spacing.xs,
+    height: 40,
+    marginTop: 5,
   },
   crowdRow: {
     flexDirection: 'row',
@@ -2055,15 +1850,15 @@ const createStyles = (dimensions) => {
     alignItems: 'center',
     height: '100%',
     backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    borderRadius: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    borderRadius: 12,
+    paddingHorizontal: 10,
   },
   crowdPerson: {
-    fontSize: isTablet ? 32 : 24,
+    fontSize: 24,
     opacity: 0.7,
   },
   crowdPersonActive: {
-    fontSize: isTablet ? 40 : 32,
+    fontSize: 32,
     opacity: 1,
   },
 
@@ -2071,10 +1866,10 @@ const createStyles = (dimensions) => {
   trackContainer: {
     flex: 1,
     backgroundColor: '#2C1810',
-    borderRadius: spacing.lg,
+    borderRadius: 20,
     position: 'relative',
     overflow: 'hidden',
-    borderWidth: isTablet ? 8 : 6,
+    borderWidth: 6,
     borderColor: '#1A0F0A',
   },
   startLine: {
@@ -2082,81 +1877,81 @@ const createStyles = (dimensions) => {
     left: 0,
     top: 0,
     bottom: 0,
-    width: isTablet ? 80 : 60,
+    width: 60,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRightWidth: isTablet ? 5 : 4,
+    borderRightWidth: 4,
     borderRightColor: '#000',
   },
   startText: {
-    fontSize: fontSize.small,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#000',
     transform: [{ rotate: '90deg' }],
-    marginBottom: spacing.sm,
+    marginBottom: 10,
   },
   startFlag: {
-    fontSize: isTablet ? 40 : 32,
+    fontSize: 32,
   },
   finishLine: {
     position: 'absolute',
     right: 0,
     top: 0,
     bottom: 0,
-    width: isTablet ? 80 : 60,
+    width: 60,
     backgroundColor: '#FFD700',
     justifyContent: 'center',
     alignItems: 'center',
   },
   finishFlag: {
-    fontSize: isTablet ? 36 : 28,
+    fontSize: 28,
   },
   finishText: {
-    fontSize: fontSize.tiny,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#000',
     transform: [{ rotate: '90deg' }],
-    marginTop: spacing.sm,
+    marginTop: 10,
   },
   topLane: {
     position: 'absolute',
-    left: isTablet ? 90 : 70,
-    right: isTablet ? 90 : 70,
+    left: 70,
+    right: 70,
     top: '28%',
-    height: isTablet ? 150 : 110,
+    height: 110,
     backgroundColor: 'rgba(139, 115, 85, 0.4)',
-    borderRadius: spacing.sm,
+    borderRadius: 10,
   },
   bottomLane: {
     position: 'absolute',
-    left: isTablet ? 90 : 70,
-    right: isTablet ? 90 : 70,
+    left: 70,
+    right: 70,
     bottom: '28%',
-    height: isTablet ? 150 : 110,
+    height: 110,
     backgroundColor: 'rgba(139, 115, 85, 0.4)',
-    borderRadius: spacing.sm,
+    borderRadius: 10,
   },
   centerDivider: {
     position: 'absolute',
-    left: isTablet ? 90 : 70,
-    right: isTablet ? 90 : 70,
+    left: 70,
+    right: 70,
     top: '50%',
-    height: isTablet ? 5 : 4,
+    height: 4,
     backgroundColor: '#FFD700',
   },
   carWrapper: {
     position: 'absolute',
-    width: sizes.carWidth,
-    height: sizes.carHeight,
+    width: 130,
+    height: 110,
   },
   carLabel: {
     position: 'absolute',
-    bottom: isTablet ? -22 : -18,
+    bottom: -18,
     left: 0,
     right: 0,
     textAlign: 'center',
-    fontSize: fontSize.tiny,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#FFF',
     textShadowColor: '#000',
@@ -2166,32 +1961,32 @@ const createStyles = (dimensions) => {
 
   // Hot Wheels Car
   carContainer: {
-    width: sizes.carWidth,
-    height: sizes.carHeight,
+    width: 130,
+    height: 110,
   },
   carShadow: {
     position: 'absolute',
     bottom: 0,
-    left: isTablet ? 20 : 15,
-    right: isTablet ? 20 : 15,
-    height: isTablet ? 12 : 10,
+    left: 15,
+    right: 15,
+    height: 10,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     borderRadius: 50,
     transform: [{ scaleX: 1.2 }],
   },
   hotWheelsCar: {
-    width: sizes.carWidth,
-    height: isTablet ? 120 : 90,
+    width: 130,
+    height: 90,
     position: 'relative',
   },
   carBody: {
     position: 'absolute',
-    top: isTablet ? 20 : 15,
-    left: isTablet ? 15 : 10,
-    right: isTablet ? 15 : 10,
-    height: isTablet ? 70 : 55,
-    borderRadius: isTablet ? 15 : 12,
-    borderWidth: isTablet ? 4 : 3,
+    top: 15,
+    left: 10,
+    right: 10,
+    height: 55,
+    borderRadius: 12,
+    borderWidth: 3,
     borderColor: '#000',
     overflow: 'hidden',
   },
@@ -2200,43 +1995,43 @@ const createStyles = (dimensions) => {
     top: 0,
     left: 0,
     right: 0,
-    height: isTablet ? 20 : 15,
+    height: 15,
     backgroundColor: 'rgba(255, 255, 255, 0.6)',
   },
   carWindshield: {
     position: 'absolute',
-    left: isTablet ? 12 : 8,
-    top: isTablet ? 12 : 8,
-    width: isTablet ? 50 : 38,
-    height: isTablet ? 50 : 38,
+    left: 8,
+    top: 8,
+    width: 38,
+    height: 38,
     backgroundColor: 'rgba(100, 200, 255, 0.6)',
-    borderRadius: isTablet ? 10 : 8,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: isTablet ? 3 : 2,
+    borderWidth: 2,
     borderColor: '#000',
   },
   driverEmoji: {
-    fontSize: isTablet ? 28 : 22,
+    fontSize: 22,
   },
   carDetails: {
     position: 'absolute',
-    right: isTablet ? 12 : 8,
-    top: isTablet ? 12 : 8,
-    bottom: isTablet ? 12 : 8,
-    left: isTablet ? 65 : 50,
+    right: 8,
+    top: 8,
+    bottom: 8,
+    left: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
   carStripe: {
     width: '80%',
-    height: isTablet ? 8 : 6,
+    height: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
     borderRadius: 3,
-    marginBottom: spacing.xs,
+    marginBottom: 5,
   },
   carName: {
-    fontSize: fontSize.tiny,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#FFF',
     textShadowColor: '#000',
@@ -2245,64 +2040,64 @@ const createStyles = (dimensions) => {
   },
   spoiler: {
     position: 'absolute',
-    right: isTablet ? 8 : 5,
-    top: isTablet ? 8 : 5,
-    width: isTablet ? 10 : 8,
-    height: isTablet ? 55 : 45,
+    right: 5,
+    top: 5,
+    width: 8,
+    height: 45,
     backgroundColor: '#000',
     borderRadius: 2,
   },
   spoilerWing: {
     position: 'absolute',
     top: 0,
-    right: isTablet ? -10 : -8,
-    width: isTablet ? 20 : 16,
-    height: isTablet ? 20 : 16,
+    right: -8,
+    width: 16,
+    height: 16,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderRadius: isTablet ? 10 : 8,
+    borderRadius: 8,
   },
   wheelsRow: {
     position: 'absolute',
     bottom: 2,
-    left: isTablet ? 20 : 15,
-    right: isTablet ? 20 : 15,
+    left: 15,
+    right: 15,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   carWheel: {
-    width: isTablet ? 48 : 38,
-    height: isTablet ? 48 : 38,
-    borderRadius: isTablet ? 24 : 19,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: '#1a1a1a',
-    borderWidth: isTablet ? 5 : 4,
+    borderWidth: 4,
     borderColor: '#444',
     justifyContent: 'center',
     alignItems: 'center',
   },
   wheelRim: {
-    width: isTablet ? 36 : 28,
-    height: isTablet ? 36 : 28,
-    borderRadius: isTablet ? 18 : 14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#888',
     justifyContent: 'center',
     alignItems: 'center',
   },
   rimDetail: {
-    fontSize: isTablet ? 22 : 18,
+    fontSize: 18,
     color: '#CCC',
   },
   sparkles: {
     position: 'absolute',
-    bottom: spacing.sm,
+    bottom: 10,
     left: -15,
   },
 
   // Question Panel
   questionPanel: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderTopLeftRadius: spacing.xl,
-    borderTopRightRadius: spacing.xl,
-    padding: spacing.lg,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -5 },
     shadowOpacity: 0.2,
@@ -2310,24 +2105,24 @@ const createStyles = (dimensions) => {
     elevation: 15,
   },
   questionCard: {
-    borderRadius: spacing.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    borderWidth: isTablet ? 5 : 4,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 15,
+    borderWidth: 4,
     borderColor: '#FFB900',
   },
   questionHeader: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    gap: 10,
+    marginBottom: 12,
   },
   questionIcon: {
-    fontSize: fontSize.large,
+    fontSize: 22,
   },
   questionTitle: {
-    fontSize: fontSize.medium,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#FF6B6B',
   },
@@ -2335,44 +2130,44 @@ const createStyles = (dimensions) => {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 12,
   },
   questionNumber: {
-    fontSize: isTablet ? 56 : 42,
+    fontSize: 42,
     fontWeight: 'bold',
     color: '#1976D2',
   },
   questionOperator: {
-    fontSize: isTablet ? 48 : 36,
+    fontSize: 36,
     fontWeight: 'bold',
     color: '#FF6B6B',
   },
   questionMark: {
-    fontSize: isTablet ? 56 : 42,
+    fontSize: 42,
     fontWeight: 'bold',
     color: '#4CAF50',
   },
   streakBadge: {
-    marginTop: spacing.sm,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
     backgroundColor: 'rgba(255, 107, 107, 0.2)',
-    borderRadius: spacing.lg,
+    borderRadius: 20,
     alignSelf: 'center',
   },
   streakText: {
-    fontSize: fontSize.small,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#FF6B6B',
   },
   answersGrid: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: 10,
   },
   answerButton: {
     flex: 1,
-    height: isTablet ? 90 : 70,
-    borderRadius: spacing.md,
+    height: 70,
+    borderRadius: 15,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -2386,7 +2181,7 @@ const createStyles = (dimensions) => {
     alignItems: 'center',
   },
   answerText: {
-    fontSize: isTablet ? 40 : 30,
+    fontSize: 30,
     fontWeight: 'bold',
     color: '#FFF',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
@@ -2394,8 +2189,8 @@ const createStyles = (dimensions) => {
     textShadowRadius: 3,
   },
   answerEmoji: {
-    fontSize: isTablet ? 28 : 22,
-    marginTop: spacing.xs,
+    fontSize: 22,
+    marginTop: 4,
   },
 
   // Game Over
@@ -2412,8 +2207,8 @@ const createStyles = (dimensions) => {
   },
   gameOverCard: {
     width: width * 0.9,
-    borderRadius: spacing.xl,
-    padding: spacing.xl,
+    borderRadius: 30,
+    padding: 35,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
@@ -2422,59 +2217,55 @@ const createStyles = (dimensions) => {
     elevation: 20,
   },
   gameOverEmoji: {
-    fontSize: isTablet ? 100 : 70,
-    marginBottom: spacing.md,
+    fontSize: 70,
+    marginBottom: 15,
   },
   gameOverTitle: {
-    fontSize: fontSize.xlarge,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#FFF',
     textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 5,
-    marginBottom: spacing.lg,
+    marginBottom: 20,
   },
   rewardsContainer: {
     flexDirection: 'row',
-    gap: spacing.lg,
-    marginBottom: spacing.lg,
+    gap: 25,
+    marginBottom: 25,
   },
   rewardItem: {
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: spacing.md,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 15,
   },
   rewardIcon: {
-    fontSize: isTablet ? 40 : 30,
-    marginBottom: spacing.xs,
+    fontSize: 30,
+    marginBottom: 5,
   },
   rewardValue: {
-    fontSize: fontSize.large,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#FFF',
   },
   gameOverButtons: {
     width: '100%',
-    gap: spacing.sm,
+    gap: 12,
   },
   gameOverButton: {
-    borderRadius: spacing.lg,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   gameOverButtonGradient: {
-    paddingVertical: spacing.md,
+    paddingVertical: 16,
     alignItems: 'center',
   },
   gameOverButtonText: {
-    fontSize: fontSize.medium,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#FFF',
   },
 });
-};
-
-// Singleton styles (başlangıç için)
-let cachedStyles = createStyles(getResponsiveSize());
