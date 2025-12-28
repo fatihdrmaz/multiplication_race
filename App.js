@@ -544,6 +544,12 @@ export default function App() {
   // Ses
   const [backgroundMusic, setBackgroundMusic] = useState(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [soundEffects, setSoundEffects] = useState({
+    boost: null,
+    correct: null,
+    wrong: null,
+    coin: null,
+  });
 
   // Animasyonlar
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -556,10 +562,16 @@ export default function App() {
     loadUserData();
     loadLeaderboard();
     setupAudio();
+    loadSoundEffects();
     return () => {
+      // Cleanup müzik
       if (backgroundMusic) {
         backgroundMusic.unloadAsync();
       }
+      // Cleanup ses efektleri
+      Object.values(soundEffects).forEach(sound => {
+        if (sound) sound.unloadAsync();
+      });
     };
   }, []);
 
@@ -571,6 +583,39 @@ export default function App() {
       });
     } catch (error) {
       console.log('Audio setup error:', error);
+    }
+  };
+
+  // Ses efektlerini yükle
+  const loadSoundEffects = async () => {
+    try {
+      const [boostSound, correctSound, wrongSound, coinSound] = await Promise.all([
+        Audio.Sound.createAsync(require('./assets/sounds/boost-sound.wav')),
+        Audio.Sound.createAsync(require('./assets/sounds/correct-answer.wav')),
+        Audio.Sound.createAsync(require('./assets/sounds/wrong-answer.mp3')),
+        Audio.Sound.createAsync(require('./assets/sounds/coin-collect.wav')),
+      ]);
+
+      setSoundEffects({
+        boost: boostSound.sound,
+        correct: correctSound.sound,
+        wrong: wrongSound.sound,
+        coin: coinSound.sound,
+      });
+    } catch (error) {
+      console.log('Sound effects load error:', error);
+    }
+  };
+
+  // Ses efekti çal
+  const playSoundEffect = async (soundType) => {
+    try {
+      const sound = soundEffects[soundType];
+      if (sound) {
+        await sound.replayAsync();
+      }
+    } catch (error) {
+      console.log(`Sound effect ${soundType} error:`, error);
     }
   };
 
@@ -768,6 +813,12 @@ export default function App() {
     setShowFeedback(true);
 
     if (answer === question.correctAnswer) {
+      // ✅ DOĞRU CEVAP!
+      
+      // Ses efektleri
+      playSoundEffect('correct');
+      playSoundEffect('boost');
+      
       setConsecutiveCorrect((prev) => prev + 1);
       const boost = 15 + consecutiveCorrect * 2;
       setPlayerBoost(true);
@@ -808,6 +859,9 @@ export default function App() {
       setScore(newScore);
       setCoins(newCoins);
       
+      // Coin ses efekti
+      playSoundEffect('coin');
+      
       Animated.spring(coinAnim, {
         toValue: 1,
         useNativeDriver: true,
@@ -820,6 +874,11 @@ export default function App() {
       });
       
     } else {
+      // ❌ YANLIŞ CEVAP
+      
+      // Yanlış cevap sesi
+      playSoundEffect('wrong');
+      
       setConsecutiveCorrect(0);
       setPlayerPosition((prev) => Math.max(0, prev - 5));
       
