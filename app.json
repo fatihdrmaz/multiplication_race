@@ -4,12 +4,10 @@
     "slug": "vroom-carpim-oyunu",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#4FC3F7"
+      "backgroundColor": "#4FC3F7",
+      "resizeMode": "contain"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -19,14 +17,11 @@
       "bundleIdentifier": "com.vroom.carpimoyunu"
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#4FC3F7"
-      },
-      "package": "com.vroom.carpimoyunu"
+      "package": "com.vroom.carpimoyunu",
+      "backgroundColor": "#4FC3F7"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "bundler": "metro"
     },
     "plugins": [
       [
