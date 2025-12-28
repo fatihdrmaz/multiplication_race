@@ -324,6 +324,7 @@ export default function App() {
   
   // Ses
   const [backgroundMusic, setBackgroundMusic] = useState(null);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [soundEffects, setSoundEffects] = useState({});
 
   // Animasyonlar
@@ -335,6 +336,12 @@ export default function App() {
     loadUserData();
     loadLeaderboard();
     setupAudio();
+    return () => {
+      // Cleanup ses
+      if (backgroundMusic) {
+        backgroundMusic.unloadAsync();
+      }
+    };
   }, []);
 
   const setupAudio = async () => {
@@ -347,6 +354,57 @@ export default function App() {
       console.log('Audio setup error:', error);
     }
   };
+
+  // Müzik çal
+  const playBackgroundMusic = async () => {
+    try {
+      if (backgroundMusic) {
+        await backgroundMusic.playAsync();
+        setIsMusicPlaying(true);
+      } else {
+        const { sound } = await Audio.Sound.createAsync(
+          require('./assets/sounds/music_zapsplat_astro_race.mp3'),
+          { 
+            isLooping: true,
+            volume: 0.3,
+          }
+        );
+        setBackgroundMusic(sound);
+        await sound.playAsync();
+        setIsMusicPlaying(true);
+      }
+    } catch (error) {
+      console.log('Music play error:', error);
+    }
+  };
+
+  // Müzik durdur
+  const pauseBackgroundMusic = async () => {
+    try {
+      if (backgroundMusic) {
+        await backgroundMusic.pauseAsync();
+        setIsMusicPlaying(false);
+      }
+    } catch (error) {
+      console.log('Music pause error:', error);
+    }
+  };
+
+  // Müzik toggle
+  const toggleMusic = async () => {
+    if (isMusicPlaying) {
+      await pauseBackgroundMusic();
+    } else {
+      await playBackgroundMusic();
+    }
+  };
+
+  // Yarış ekranına geçince müzik başlat
+  useEffect(() => {
+    if (gameScreen === 'game' && !isMusicPlaying) {
+      playBackgroundMusic();
+    }
+  }, [gameScreen]);
 
   const loadUserData = async () => {
     try {
@@ -696,7 +754,10 @@ export default function App() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => setGameScreen('carSelect')}
+            onPress={() => {
+              pauseBackgroundMusic();
+              setGameScreen('carSelect');
+            }}
           >
             <Text style={styles.backButtonText}>← Geri</Text>
           </TouchableOpacity>
@@ -715,6 +776,15 @@ export default function App() {
             <Text style={styles.scoreEmoji}>⭐</Text>
             <Text style={styles.scoreValue}>{score}</Text>
           </View>
+
+          <TouchableOpacity
+            style={styles.musicButton}
+            onPress={toggleMusic}
+          >
+            <Text style={styles.musicButtonText}>
+              {isMusicPlaying ? '🔊' : '🔇'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Yarış Alanı */}
@@ -1166,6 +1236,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#333',
+  },
+  musicButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  musicButtonText: {
+    fontSize: 20,
   },
   scoreBox: {
     flexDirection: 'row',
