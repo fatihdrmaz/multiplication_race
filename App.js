@@ -779,12 +779,35 @@ export default function App() {
     ]).start();
   };
 
-  // Rakip hareketi
+  // Rakip hareketi - DİNAMİK ZORLUK
   useEffect(() => {
     if (gameStatus === 'playing' && gameScreen === 'game') {
       const interval = setInterval(() => {
         setOpponentPosition((prev) => {
-          const newPos = prev + Math.random() * 2 + 1;
+          // Dinamik AI hızı hesaplama
+          let aiSpeed = 1.5 + (level * 0.3); // Her seviyede artış
+          
+          // Rubber banding - Oyuncu çok önde ise AI hızlanır
+          const positionDiff = playerPosition - prev;
+          if (positionDiff > 20) {
+            aiSpeed *= 1.5; // AI %50 hızlanır
+          } else if (positionDiff > 10) {
+            aiSpeed *= 1.2; // AI %20 hızlanır
+          } else if (positionDiff < -10) {
+            aiSpeed *= 0.8; // Oyuncu geride ise AI yavaşlar
+          }
+          
+          // Araba hızına göre bonus
+          if (selectedCar) {
+            const carSpeedFactor = selectedCar.speed / 10; // 0.5 - 1.0
+            aiSpeed *= (1 + carSpeedFactor * 0.3); // Daha hızlı arabaya karşı AI güçlenir
+          }
+          
+          // Rastgelelik ekle (1.0 - 1.5x)
+          const randomFactor = 1 + Math.random() * 0.5;
+          aiSpeed *= randomFactor;
+          
+          const newPos = prev + aiSpeed;
           if (newPos >= 100) {
             setGameStatus('lost');
             return 100;
@@ -794,7 +817,7 @@ export default function App() {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [gameStatus, gameScreen]);
+  }, [gameStatus, gameScreen, level, playerPosition, selectedCar]);
 
   const resetGame = () => {
     setPlayerPosition(0);
@@ -820,7 +843,16 @@ export default function App() {
       playSoundEffect('boost');
       
       setConsecutiveCorrect((prev) => prev + 1);
-      const boost = 15 + consecutiveCorrect * 2;
+      
+      // Combo bonusu dengeli hale getirildi
+      let boost = 12; // Temel hız (15'ten düşürüldü)
+      if (consecutiveCorrect > 0) {
+        // Combo bonusu azaltıldı: her combo +1.5 (eskiden +2)
+        boost += consecutiveCorrect * 1.5;
+        // Max 25 ile sınırlandı (eskiden sınırsızdı)
+        boost = Math.min(boost, 25);
+      }
+      
       setPlayerBoost(true);
       
       // Kamera efektleri
@@ -880,7 +912,9 @@ export default function App() {
       playSoundEffect('wrong');
       
       setConsecutiveCorrect(0);
-      setPlayerPosition((prev) => Math.max(0, prev - 5));
+      
+      // Yanlış cevap cezası artırıldı (-5'ten -8'e)
+      setPlayerPosition((prev) => Math.max(0, prev - 8));
       
       // Yanlış cevap shake
       triggerCameraShake(15);
@@ -1150,7 +1184,12 @@ export default function App() {
               <View style={styles.topLane}>
                 <Animated.View style={[styles.carWrapper, { left: `${opponentPosition}%` }]}>
                   <HotWheelsCar
-                    car={{ ...selectedCar, color: '#FF6B9D', secondaryColor: '#C71585' }}
+                    car={{
+                      ...HOT_WHEELS_CARS[1], // Blue Lightning (AI her zaman 2. arabayı kullanır)
+                      color: '#FF6B9D',
+                      secondaryColor: '#C71585',
+                      name: 'AI Racer'
+                    }}
                     isPlayer={false}
                   />
                   <Text style={styles.carLabel}>AI Rakip</Text>
