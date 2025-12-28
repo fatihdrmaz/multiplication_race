@@ -11,6 +11,7 @@ import {
   TextInput,
   FlatList,
   Modal,
+  Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
@@ -103,7 +104,215 @@ const generateQuestion = (level = 1) => {
   return { num1, num2, correctAnswer, answers: allAnswers };
 };
 
-// Hot Wheels Araba Bileşeni
+// SPEED LINES BİLEŞENİ
+const SpeedLines = ({ boost = false }) => {
+  const lines = useRef([...Array(8)].map(() => new Animated.Value(0))).current;
+
+  useEffect(() => {
+    const animations = lines.map((line, i) => {
+      return Animated.loop(
+        Animated.timing(line, {
+          toValue: 1,
+          duration: boost ? 300 : 600,
+          delay: i * 50,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      );
+    });
+    animations.forEach(anim => anim.start());
+    return () => animations.forEach(anim => anim.stop());
+  }, [boost]);
+
+  return (
+    <View style={styles.speedLinesContainer}>
+      {lines.map((line, i) => {
+        const translateX = line.interpolate({
+          inputRange: [0, 1],
+          outputRange: [width, -50],
+        });
+        return (
+          <Animated.View
+            key={i}
+            style={[
+              styles.speedLine,
+              {
+                top: `${15 + i * 10}%`,
+                transform: [{ translateX }],
+                opacity: boost ? 0.8 : 0.4,
+              },
+            ]}
+          />
+        );
+      })}
+    </View>
+  );
+};
+
+// PARTİKÜL SİSTEMİ
+const ParticleSystem = ({ active = false, type = 'dust' }) => {
+  const particles = useRef([...Array(12)].map(() => ({
+    x: new Animated.Value(0),
+    y: new Animated.Value(0),
+    opacity: new Animated.Value(1),
+    scale: new Animated.Value(1),
+  }))).current;
+
+  useEffect(() => {
+    if (active) {
+      const animations = particles.map((particle) => {
+        return Animated.parallel([
+          Animated.timing(particle.x, {
+            toValue: -100 - Math.random() * 50,
+            duration: 800 + Math.random() * 400,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(particle.y, {
+            toValue: (Math.random() - 0.5) * 40,
+            duration: 800 + Math.random() * 400,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(particle.opacity, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(particle.scale, {
+            toValue: type === 'spark' ? 0.2 : 1.5,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]);
+      });
+      
+      animations.forEach((anim, i) => {
+        setTimeout(() => anim.start(() => {
+          particle.x.setValue(0);
+          particle.y.setValue(0);
+          particle.opacity.setValue(1);
+          particle.scale.setValue(1);
+        }), i * 100);
+      });
+    }
+  }, [active]);
+
+  return (
+    <View style={styles.particleContainer}>
+      {particles.map((particle, i) => (
+        <Animated.Text
+          key={i}
+          style={[
+            styles.particle,
+            {
+              transform: [
+                { translateX: particle.x },
+                { translateY: particle.y },
+                { scale: particle.scale },
+              ],
+              opacity: particle.opacity,
+            },
+          ]}
+        >
+          {type === 'spark' ? '✨' : type === 'fire' ? '🔥' : '💨'}
+        </Animated.Text>
+      ))}
+    </View>
+  );
+};
+
+// PARALAKS DAĞLAR
+const ParallaxMountains = () => {
+  const scroll = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(scroll, {
+        toValue: 1,
+        duration: 15000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, []);
+
+  const translateX = scroll.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -width * 0.3],
+  });
+
+  return (
+    <Animated.View style={[styles.mountainsLayer, { transform: [{ translateX }] }]}>
+      {[...Array(5)].map((_, i) => (
+        <View key={i} style={styles.mountain}>
+          <Text style={styles.mountainEmoji}>🏔️</Text>
+        </View>
+      ))}
+    </Animated.View>
+  );
+};
+
+// GELİŞMİŞ DEKORASYONLAR
+const TrackDecorations = () => {
+  const [wave, setWave] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWave((prev) => (prev + 1) % 3);
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <View style={styles.decorationsContainer}>
+      <View style={styles.topDecorations}>
+        <Text style={[styles.decoration, wave === 0 && styles.decorationActive]}>🎪</Text>
+        <Text style={[styles.decoration, wave === 1 && styles.decorationActive]}>🎡</Text>
+        <Text style={[styles.decoration, wave === 2 && styles.decorationActive]}>🎠</Text>
+        <Text style={[styles.decoration, wave === 0 && styles.decorationActive]}>🎆</Text>
+      </View>
+      <View style={styles.bottomDecorations}>
+        <Text style={[styles.decoration, wave === 2 && styles.decorationActive]}>📢</Text>
+        <Text style={[styles.decoration, wave === 1 && styles.decorationActive]}>💡</Text>
+        <Text style={[styles.decoration, wave === 0 && styles.decorationActive]}>🎈</Text>
+        <Text style={[styles.decoration, wave === 2 && styles.decorationActive]}>🏁</Text>
+      </View>
+    </View>
+  );
+};
+
+// YARIŞ PROGRESS BAR
+const RaceProgressBar = ({ playerPosition, opponentPosition }) => {
+  return (
+    <View style={styles.progressBar}>
+      <View style={styles.progressTrack}>
+        <Animated.View
+          style={[styles.progressMarker, { left: `${playerPosition}%` }]}
+        >
+          <Text style={styles.progressEmoji}>🏎️</Text>
+          <Text style={styles.progressLabel}>Sen</Text>
+        </Animated.View>
+        <Animated.View
+          style={[styles.progressMarker, { left: `${opponentPosition}%` }]}
+        >
+          <Text style={styles.progressEmoji}>🤖</Text>
+          <Text style={styles.progressLabel}>AI</Text>
+        </Animated.View>
+        <View style={styles.finishMarker}>
+          <Text style={styles.finishMarkerText}>🏁</Text>
+        </View>
+      </View>
+      <View style={styles.distanceInfo}>
+        <Text style={styles.distanceText}>
+          📍 Finişe: {Math.round(100 - playerPosition)}m
+        </Text>
+      </View>
+    </View>
+  );
+};
+
+// Hot Wheels Araba Bileşeni (GÖLGELİ VERSİYON)
 const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true }) => {
   const wheelRotate = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
@@ -113,7 +322,8 @@ const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true }) => 
     Animated.loop(
       Animated.timing(wheelRotate, {
         toValue: 1,
-        duration: 500,
+        duration: boost ? 300 : 500,
+        easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
@@ -147,7 +357,7 @@ const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true }) => 
         }),
       ])
     ).start();
-  }, []);
+  }, [boost]);
 
   const wheelSpin = wheelRotate.interpolate({
     inputRange: [0, 1],
@@ -160,55 +370,59 @@ const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true }) => 
   });
 
   return (
-    <Animated.View style={[
-      styles.hotWheelsCar,
-      { transform: [{ translateY: bounceAnim }] }
-    ]}>
-      {boost && (
-        <View style={styles.boostEffect}>
-          <Text style={styles.boostFlame}>🔥💨🔥</Text>
-        </View>
-      )}
+    <View style={styles.carContainer}>
+      {/* Gölge */}
+      <View style={styles.carShadow} />
       
-      <LinearGradient
-        colors={[car.color, car.secondaryColor]}
-        style={styles.carBody}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Animated.View style={[styles.carGlow, { opacity: glowOpacity }]} />
+      <Animated.View style={[
+        styles.hotWheelsCar,
+        { transform: [{ translateY: bounceAnim }] }
+      ]}>
+        {boost && <ParticleSystem active={boost} type="fire" />}
+        <ParticleSystem active={true} type="dust" />
         
-        <View style={styles.carWindshield}>
-          <Text style={styles.driverEmoji}>{isPlayer ? '😎' : '🤖'}</Text>
-        </View>
+        <LinearGradient
+          colors={[car.color, car.secondaryColor]}
+          style={styles.carBody}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Animated.View style={[styles.carGlow, { opacity: glowOpacity }]} />
+          
+          <View style={styles.carWindshield}>
+            <Text style={styles.driverEmoji}>{isPlayer ? '😎' : '🤖'}</Text>
+          </View>
+          
+          <View style={styles.carDetails}>
+            <View style={styles.carStripe} />
+            <Text style={styles.carName}>{car.name}</Text>
+          </View>
+
+          <View style={styles.spoiler}>
+            <View style={styles.spoilerWing} />
+          </View>
+        </LinearGradient>
         
-        <View style={styles.carDetails}>
-          <View style={styles.carStripe} />
-          <Text style={styles.carName}>{car.name}</Text>
+        <View style={styles.wheelsRow}>
+          <Animated.View style={[styles.carWheel, { transform: [{ rotate: wheelSpin }] }]}>
+            <View style={styles.wheelRim}>
+              <Text style={styles.rimDetail}>⚙</Text>
+            </View>
+          </Animated.View>
+          <Animated.View style={[styles.carWheel, { transform: [{ rotate: wheelSpin }] }]}>
+            <View style={styles.wheelRim}>
+              <Text style={styles.rimDetail}>⚙</Text>
+            </View>
+          </Animated.View>
         </View>
 
-        <View style={styles.spoiler}>
-          <View style={styles.spoilerWing} />
-        </View>
-      </LinearGradient>
-      
-      <View style={styles.wheelsRow}>
-        <Animated.View style={[styles.carWheel, { transform: [{ rotate: wheelSpin }] }]}>
-          <View style={styles.wheelRim}>
-            <Text style={styles.rimDetail}>⚙</Text>
+        {boost && (
+          <View style={styles.sparkles}>
+            <ParticleSystem active={boost} type="spark" />
           </View>
-        </Animated.View>
-        <Animated.View style={[styles.carWheel, { transform: [{ rotate: wheelSpin }] }]}>
-          <View style={styles.wheelRim}>
-            <Text style={styles.rimDetail}>⚙</Text>
-          </View>
-        </Animated.View>
-      </View>
-
-      <View style={styles.sparkles}>
-        <Text style={styles.sparkle}>✨</Text>
-      </View>
-    </Animated.View>
+        )}
+      </Animated.View>
+    </View>
   );
 };
 
@@ -221,7 +435,8 @@ const RaceTrack = () => {
     Animated.loop(
       Animated.timing(cloudAnim, {
         toValue: 1,
-        duration: 8000,
+        duration: 12000,
+        easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
@@ -230,6 +445,7 @@ const RaceTrack = () => {
       Animated.timing(treeAnim, {
         toValue: 1,
         duration: 2000,
+        easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
@@ -247,6 +463,9 @@ const RaceTrack = () => {
 
   return (
     <View style={styles.trackEnvironment}>
+      {/* Paralaks Dağlar */}
+      <ParallaxMountains />
+      
       {/* Bulutlar */}
       <Animated.View style={[styles.clouds, { transform: [{ translateX: cloudTranslate }] }]}>
         {[...Array(10)].map((_, i) => (
@@ -300,7 +519,7 @@ const AnimatedCrowd = () => {
 
 export default function App() {
   // Oyun Durumu
-  const [gameScreen, setGameScreen] = useState('welcome'); // welcome, carSelect, game, leaderboard
+  const [gameScreen, setGameScreen] = useState('welcome');
   const [username, setUsername] = useState('');
   const [selectedCar, setSelectedCar] = useState(null);
   const [unlockedCars, setUnlockedCars] = useState([1]);
@@ -325,11 +544,12 @@ export default function App() {
   // Ses
   const [backgroundMusic, setBackgroundMusic] = useState(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [soundEffects, setSoundEffects] = useState({});
 
   // Animasyonlar
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const coinAnim = useRef(new Animated.Value(0)).current;
+  const cameraShake = useRef(new Animated.Value(0)).current;
+  const cameraZoom = useRef(new Animated.Value(1)).current;
 
   // Veri yükle
   useEffect(() => {
@@ -337,7 +557,6 @@ export default function App() {
     loadLeaderboard();
     setupAudio();
     return () => {
-      // Cleanup ses
       if (backgroundMusic) {
         backgroundMusic.unloadAsync();
       }
@@ -355,7 +574,6 @@ export default function App() {
     }
   };
 
-  // Müzik çal
   const playBackgroundMusic = async () => {
     try {
       if (backgroundMusic) {
@@ -378,7 +596,6 @@ export default function App() {
     }
   };
 
-  // Müzik durdur
   const pauseBackgroundMusic = async () => {
     try {
       if (backgroundMusic) {
@@ -390,7 +607,6 @@ export default function App() {
     }
   };
 
-  // Müzik toggle
   const toggleMusic = async () => {
     if (isMusicPlaying) {
       await pauseBackgroundMusic();
@@ -399,7 +615,6 @@ export default function App() {
     }
   };
 
-  // Yarış ekranına geçince müzik başlat
   useEffect(() => {
     if (gameScreen === 'game' && !isMusicPlaying) {
       playBackgroundMusic();
@@ -447,7 +662,6 @@ export default function App() {
       const data = await AsyncStorage.getItem('leaderboard');
       let board = data ? JSON.parse(data) : [];
       
-      // Kullanıcıyı bul veya ekle
       const userIndex = board.findIndex(u => u.username === username);
       if (userIndex >= 0) {
         if (newScore > board[userIndex].score) {
@@ -457,7 +671,6 @@ export default function App() {
         board.push({ username, score: newScore });
       }
       
-      // Sırala ve en iyi 10'u tut
       board.sort((a, b) => b.score - a.score);
       board = board.slice(0, 10);
       
@@ -477,6 +690,48 @@ export default function App() {
       setUnlockedCars(newUnlocked);
       await saveUserData({ coins: newCoins, unlockedCars: newUnlocked });
     }
+  };
+
+  // Kamera shake efekti
+  const triggerCameraShake = (intensity = 10) => {
+    Animated.sequence([
+      Animated.timing(cameraShake, {
+        toValue: intensity,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cameraShake, {
+        toValue: -intensity,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cameraShake, {
+        toValue: intensity / 2,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cameraShake, {
+        toValue: 0,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  // Boost zoom efekti
+  const triggerBoostZoom = () => {
+    Animated.sequence([
+      Animated.timing(cameraZoom, {
+        toValue: 1.1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cameraZoom, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
   // Rakip hareketi
@@ -503,6 +758,7 @@ export default function App() {
     setQuestion(generateQuestion(level));
     setSelectedAnswer(null);
     setShowFeedback(false);
+    cameraZoom.setValue(1);
   };
 
   const handleAnswer = async (answer) => {
@@ -515,6 +771,10 @@ export default function App() {
       setConsecutiveCorrect((prev) => prev + 1);
       const boost = 15 + consecutiveCorrect * 2;
       setPlayerBoost(true);
+      
+      // Kamera efektleri
+      triggerCameraShake(5);
+      triggerBoostZoom();
       
       setTimeout(() => setPlayerBoost(false), 1000);
       
@@ -530,6 +790,13 @@ export default function App() {
           
           saveUserData({ username, coins: finalCoins });
           updateLeaderboard(finalScore);
+          
+          // Kazanma zoom
+          Animated.timing(cameraZoom, {
+            toValue: 1.2,
+            duration: 1000,
+            useNativeDriver: true,
+          }).start();
           
           return 100;
         }
@@ -556,6 +823,9 @@ export default function App() {
       setConsecutiveCorrect(0);
       setPlayerPosition((prev) => Math.max(0, prev - 5));
       
+      // Yanlış cevap shake
+      triggerCameraShake(15);
+      
       Animated.sequence([
         Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
         Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
@@ -578,7 +848,7 @@ export default function App() {
     outputRange: [1, 1.5],
   });
 
-  // HOŞGELDİN EKRANI
+  // HOŞGELDİN EKRANI (değişmedi, aynı kaldı)
   if (gameScreen === 'welcome') {
     return (
       <SafeAreaView style={styles.container}>
@@ -631,7 +901,6 @@ export default function App() {
           </View>
         </LinearGradient>
 
-        {/* Leaderboard Modal */}
         <Modal visible={showLeaderboard} animationType="slide" transparent>
           <View style={styles.modalOverlay}>
             <View style={styles.leaderboardModal}>
@@ -665,7 +934,7 @@ export default function App() {
     );
   }
 
-  // ARABA SEÇİM EKRANI
+  // ARABA SEÇİM EKRANI (değişmedi, aynı kaldı)
   if (gameScreen === 'carSelect') {
     return (
       <SafeAreaView style={styles.container}>
@@ -745,209 +1014,227 @@ export default function App() {
     );
   }
 
-  // OYUN EKRANI
+  // OYUN EKRANI (GELİŞMİŞ VERSİYON)
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <LinearGradient colors={['#87CEEB', '#E0F6FF']} style={styles.gradient}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => {
-              pauseBackgroundMusic();
-              setGameScreen('carSelect');
-            }}
-          >
-            <Text style={styles.backButtonText}>← Geri</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.scoreBox}>
-            <Text style={styles.scoreEmoji}>🏆</Text>
-            <Text style={styles.scoreValue}>{level}</Text>
-          </View>
-          
-          <Animated.View style={[styles.scoreBox, { transform: [{ scale: coinScale }] }]}>
-            <Text style={styles.scoreEmoji}>🪙</Text>
-            <Text style={styles.scoreValue}>{coins}</Text>
-          </Animated.View>
-          
-          <View style={styles.scoreBox}>
-            <Text style={styles.scoreEmoji}>⭐</Text>
-            <Text style={styles.scoreValue}>{score}</Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.musicButton}
-            onPress={toggleMusic}
-          >
-            <Text style={styles.musicButtonText}>
-              {isMusicPlaying ? '🔊' : '🔇'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Yarış Alanı */}
-        <View style={styles.raceArea}>
-          <RaceTrack />
-          
-          <View style={styles.topCrowd}>
-            <AnimatedCrowd />
-          </View>
-
-          <View style={styles.trackContainer}>
-            <View style={styles.startLine}>
-              <Text style={styles.startText}>START</Text>
-              <Text style={styles.startFlag}>🏁</Text>
-            </View>
-
-            {/* Rakip Lane */}
-            <View style={styles.topLane}>
-              <Animated.View style={[styles.carWrapper, { left: `${opponentPosition}%` }]}>
-                <HotWheelsCar
-                  car={{ ...selectedCar, color: '#FF6B9D', secondaryColor: '#C71585' }}
-                  isPlayer={false}
-                />
-                <Text style={styles.carLabel}>AI Rakip</Text>
-              </Animated.View>
-            </View>
-
-            <View style={styles.centerDivider} />
-
-            {/* Oyuncu Lane */}
-            <View style={styles.bottomLane}>
-              <Animated.View
-                style={[
-                  styles.carWrapper,
-                  {
-                    left: `${playerPosition}%`,
-                    transform: [{ translateX: shakeAnim }],
-                  },
-                ]}
-              >
-                <HotWheelsCar car={selectedCar} boost={playerBoost} isPlayer={true} />
-                <Text style={styles.carLabel}>{username}</Text>
-              </Animated.View>
-            </View>
-
-            <View style={styles.finishLine}>
-              <Text style={styles.finishFlag}>🏁</Text>
-              <Text style={styles.finishText}>FİNİŞ</Text>
-              <Text style={styles.finishFlag}>🏁</Text>
-            </View>
-          </View>
-
-          <View style={styles.bottomCrowd}>
-            <AnimatedCrowd />
-          </View>
-        </View>
-
-        {/* Soru Paneli */}
-        <View style={styles.questionPanel}>
-          <LinearGradient colors={['#FFD93D', '#FFF4A3']} style={styles.questionCard}>
-            <View style={styles.questionHeader}>
-              <Text style={styles.questionIcon}>🧮</Text>
-              <Text style={styles.questionTitle}>Çarpım Sorusu!</Text>
-              <Text style={styles.questionIcon}>🧮</Text>
-            </View>
-            
-            <View style={styles.questionDisplay}>
-              <Text style={styles.questionNumber}>{question.num1}</Text>
-              <Text style={styles.questionOperator}>×</Text>
-              <Text style={styles.questionNumber}>{question.num2}</Text>
-              <Text style={styles.questionOperator}>=</Text>
-              <Text style={styles.questionMark}>?</Text>
-            </View>
-            
-            {consecutiveCorrect > 1 && (
-              <View style={styles.streakBadge}>
-                <Text style={styles.streakText}>🔥 {consecutiveCorrect} Kombo!</Text>
-              </View>
-            )}
-          </LinearGradient>
-
-          <View style={styles.answersGrid}>
-            {question.answers.map((answer, index) => {
-              const isSelected = selectedAnswer === answer;
-              const isCorrect = answer === question.correctAnswer;
-              const showResult = showFeedback && isSelected;
-              
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.answerButton}
-                  onPress={() => handleAnswer(answer)}
-                  disabled={showFeedback}
-                >
-                  <LinearGradient
-                    colors={
-                      showResult && isCorrect
-                        ? ['#4CAF50', '#45B649']
-                        : showResult && !isCorrect
-                        ? ['#EF5350', '#E53935']
-                        : ['#FF6B6B', '#FF8E53']
-                    }
-                    style={styles.answerGradient}
-                  >
-                    <Text style={styles.answerText}>{answer}</Text>
-                    {showResult && (
-                      <Text style={styles.answerEmoji}>{isCorrect ? '✅' : '❌'}</Text>
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Oyun Sonu */}
-        {gameStatus !== 'playing' && (
-          <View style={styles.gameOverOverlay}>
-            <LinearGradient
-              colors={gameStatus === 'won' ? ['#FFD93D', '#FF6B6B'] : ['#A8DADC', '#457B9D']}
-              style={styles.gameOverCard}
+        <Animated.View style={[
+          styles.gameContainer,
+          {
+            transform: [
+              { translateX: cameraShake },
+              { scale: cameraZoom },
+            ],
+          },
+        ]}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => {
+                pauseBackgroundMusic();
+                setGameScreen('carSelect');
+              }}
             >
-              <Text style={styles.gameOverEmoji}>
-                {gameStatus === 'won' ? '🏆🎉' : '😊💪'}
+              <Text style={styles.backButtonText}>← Geri</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.scoreBox}>
+              <Text style={styles.scoreEmoji}>🏆</Text>
+              <Text style={styles.scoreValue}>{level}</Text>
+            </View>
+            
+            <Animated.View style={[styles.scoreBox, { transform: [{ scale: coinScale }] }]}>
+              <Text style={styles.scoreEmoji}>🪙</Text>
+              <Text style={styles.scoreValue}>{coins}</Text>
+            </Animated.View>
+            
+            <View style={styles.scoreBox}>
+              <Text style={styles.scoreEmoji}>⭐</Text>
+              <Text style={styles.scoreValue}>{score}</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.musicButton}
+              onPress={toggleMusic}
+            >
+              <Text style={styles.musicButtonText}>
+                {isMusicPlaying ? '🔊' : '🔇'}
               </Text>
-              <Text style={styles.gameOverTitle}>
-                {gameStatus === 'won' ? `${username} KAZANDI!` : 'Tekrar Dene!'}
-              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Yarış Progress Bar */}
+          <RaceProgressBar 
+            playerPosition={playerPosition} 
+            opponentPosition={opponentPosition} 
+          />
+
+          {/* Yarış Alanı */}
+          <View style={styles.raceArea}>
+            <RaceTrack />
+            <SpeedLines boost={playerBoost} />
+            <TrackDecorations />
+            
+            <View style={styles.topCrowd}>
+              <AnimatedCrowd />
+            </View>
+
+            <View style={styles.trackContainer}>
+              <View style={styles.startLine}>
+                <Text style={styles.startText}>START</Text>
+                <Text style={styles.startFlag}>🏁</Text>
+              </View>
+
+              {/* Rakip Lane */}
+              <View style={styles.topLane}>
+                <Animated.View style={[styles.carWrapper, { left: `${opponentPosition}%` }]}>
+                  <HotWheelsCar
+                    car={{ ...selectedCar, color: '#FF6B9D', secondaryColor: '#C71585' }}
+                    isPlayer={false}
+                  />
+                  <Text style={styles.carLabel}>AI Rakip</Text>
+                </Animated.View>
+              </View>
+
+              <View style={styles.centerDivider} />
+
+              {/* Oyuncu Lane */}
+              <View style={styles.bottomLane}>
+                <Animated.View
+                  style={[
+                    styles.carWrapper,
+                    {
+                      left: `${playerPosition}%`,
+                      transform: [{ translateX: shakeAnim }],
+                    },
+                  ]}
+                >
+                  <HotWheelsCar car={selectedCar} boost={playerBoost} isPlayer={true} />
+                  <Text style={styles.carLabel}>{username}</Text>
+                </Animated.View>
+              </View>
+
+              <View style={styles.finishLine}>
+                <Text style={styles.finishFlag}>🏁</Text>
+                <Text style={styles.finishText}>FİNİŞ</Text>
+                <Text style={styles.finishFlag}>🏁</Text>
+              </View>
+            </View>
+
+            <View style={styles.bottomCrowd}>
+              <AnimatedCrowd />
+            </View>
+          </View>
+
+          {/* Soru Paneli */}
+          <View style={styles.questionPanel}>
+            <LinearGradient colors={['#FFD93D', '#FFF4A3']} style={styles.questionCard}>
+              <View style={styles.questionHeader}>
+                <Text style={styles.questionIcon}>🧮</Text>
+                <Text style={styles.questionTitle}>Çarpım Sorusu!</Text>
+                <Text style={styles.questionIcon}>🧮</Text>
+              </View>
               
-              {gameStatus === 'won' && (
-                <View style={styles.rewardsContainer}>
-                  <View style={styles.rewardItem}>
-                    <Text style={styles.rewardIcon}>⭐</Text>
-                    <Text style={styles.rewardValue}>+{100 + level * 10}</Text>
-                  </View>
-                  <View style={styles.rewardItem}>
-                    <Text style={styles.rewardIcon}>🪙</Text>
-                    <Text style={styles.rewardValue}>+{5 + level}</Text>
-                  </View>
+              <View style={styles.questionDisplay}>
+                <Text style={styles.questionNumber}>{question.num1}</Text>
+                <Text style={styles.questionOperator}>×</Text>
+                <Text style={styles.questionNumber}>{question.num2}</Text>
+                <Text style={styles.questionOperator}>=</Text>
+                <Text style={styles.questionMark}>?</Text>
+              </View>
+              
+              {consecutiveCorrect > 1 && (
+                <View style={styles.streakBadge}>
+                  <Text style={styles.streakText}>🔥 {consecutiveCorrect} Kombo!</Text>
                 </View>
               )}
-              
-              <View style={styles.gameOverButtons}>
-                <TouchableOpacity style={styles.gameOverButton} onPress={resetGame}>
-                  <LinearGradient colors={['#4ECDC4', '#44A08D']} style={styles.gameOverButtonGradient}>
-                    <Text style={styles.gameOverButtonText}>
-                      {gameStatus === 'won' ? '🏁 Sonraki' : '🔄 Tekrar'}
-                    </Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.gameOverButton}
-                  onPress={() => setGameScreen('carSelect')}
-                >
-                  <LinearGradient colors={['#FF6B6B', '#FF8E53']} style={styles.gameOverButtonGradient}>
-                    <Text style={styles.gameOverButtonText}>🏎️ Araba Değiştir</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
             </LinearGradient>
+
+            <View style={styles.answersGrid}>
+              {question.answers.map((answer, index) => {
+                const isSelected = selectedAnswer === answer;
+                const isCorrect = answer === question.correctAnswer;
+                const showResult = showFeedback && isSelected;
+                
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.answerButton}
+                    onPress={() => handleAnswer(answer)}
+                    disabled={showFeedback}
+                  >
+                    <LinearGradient
+                      colors={
+                        showResult && isCorrect
+                          ? ['#4CAF50', '#45B649']
+                          : showResult && !isCorrect
+                          ? ['#EF5350', '#E53935']
+                          : ['#FF6B6B', '#FF8E53']
+                      }
+                      style={styles.answerGradient}
+                    >
+                      <Text style={styles.answerText}>{answer}</Text>
+                      {showResult && (
+                        <Text style={styles.answerEmoji}>{isCorrect ? '✅' : '❌'}</Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-        )}
+
+          {/* Oyun Sonu */}
+          {gameStatus !== 'playing' && (
+            <View style={styles.gameOverOverlay}>
+              <LinearGradient
+                colors={gameStatus === 'won' ? ['#FFD93D', '#FF6B6B'] : ['#A8DADC', '#457B9D']}
+                style={styles.gameOverCard}
+              >
+                <Text style={styles.gameOverEmoji}>
+                  {gameStatus === 'won' ? '🏆🎉' : '😊💪'}
+                </Text>
+                <Text style={styles.gameOverTitle}>
+                  {gameStatus === 'won' ? `${username} KAZANDI!` : 'Tekrar Dene!'}
+                </Text>
+                
+                {gameStatus === 'won' && (
+                  <View style={styles.rewardsContainer}>
+                    <View style={styles.rewardItem}>
+                      <Text style={styles.rewardIcon}>⭐</Text>
+                      <Text style={styles.rewardValue}>+{100 + level * 10}</Text>
+                    </View>
+                    <View style={styles.rewardItem}>
+                      <Text style={styles.rewardIcon}>🪙</Text>
+                      <Text style={styles.rewardValue}>+{5 + level}</Text>
+                    </View>
+                  </View>
+                )}
+                
+                <View style={styles.gameOverButtons}>
+                  <TouchableOpacity style={styles.gameOverButton} onPress={resetGame}>
+                    <LinearGradient colors={['#4ECDC4', '#44A08D']} style={styles.gameOverButtonGradient}>
+                      <Text style={styles.gameOverButtonText}>
+                        {gameStatus === 'won' ? '🏁 Sonraki' : '🔄 Tekrar'}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.gameOverButton}
+                    onPress={() => setGameScreen('carSelect')}
+                  >
+                    <LinearGradient colors={['#FF6B6B', '#FF8E53']} style={styles.gameOverButtonGradient}>
+                      <Text style={styles.gameOverButtonText}>🏎️ Araba Değiştir</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
+            </View>
+          )}
+        </Animated.View>
       </LinearGradient>
     </SafeAreaView>
   );
@@ -960,8 +1247,11 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
+  gameContainer: {
+    flex: 1,
+  },
 
-  // Welcome Screen
+  // Welcome Screen (aynı)
   welcomeContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1048,7 +1338,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
   },
 
-  // Car Select Screen
+  // Car Select Screen (aynı)
   carSelectContainer: {
     flex: 1,
     padding: 20,
@@ -1153,7 +1443,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
 
-  // Leaderboard Modal
+  // Leaderboard Modal (aynı)
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -1272,6 +1562,142 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FF6B6B',
+  },
+
+  // Progress Bar
+  progressBar: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    marginHorizontal: 10,
+    marginVertical: 8,
+    borderRadius: 15,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  progressTrack: {
+    height: 40,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 20,
+    position: 'relative',
+    overflow: 'visible',
+  },
+  progressMarker: {
+    position: 'absolute',
+    top: -5,
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    marginLeft: -25,
+  },
+  progressEmoji: {
+    fontSize: 28,
+  },
+  progressLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 2,
+  },
+  finishMarker: {
+    position: 'absolute',
+    right: -10,
+    top: -5,
+    alignItems: 'center',
+  },
+  finishMarkerText: {
+    fontSize: 32,
+  },
+  distanceInfo: {
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  distanceText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FF6B6B',
+  },
+
+  // Speed Lines
+  speedLinesContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+  },
+  speedLine: {
+    position: 'absolute',
+    width: 50,
+    height: 3,
+    backgroundColor: '#FFF',
+    borderRadius: 2,
+  },
+
+  // Particle System
+  particleContainer: {
+    position: 'absolute',
+    left: -30,
+    top: 20,
+    width: 100,
+    height: 60,
+  },
+  particle: {
+    position: 'absolute',
+    fontSize: 16,
+  },
+
+  // Paralaks Mountains
+  mountainsLayer: {
+    position: 'absolute',
+    top: 30,
+    left: 0,
+    flexDirection: 'row',
+    gap: 150,
+    opacity: 0.3,
+  },
+  mountain: {
+    alignItems: 'center',
+  },
+  mountainEmoji: {
+    fontSize: 64,
+  },
+
+  // Dekorasyon
+  decorationsContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: 'none',
+  },
+  topDecorations: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    right: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  bottomDecorations: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    right: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  decoration: {
+    fontSize: 24,
+    opacity: 0.6,
+  },
+  decorationActive: {
+    fontSize: 32,
+    opacity: 1,
   },
 
   // Race Area
@@ -1436,19 +1862,24 @@ const styles = StyleSheet.create({
   },
 
   // Hot Wheels Car
+  carContainer: {
+    width: 130,
+    height: 110,
+  },
+  carShadow: {
+    position: 'absolute',
+    bottom: 0,
+    left: 15,
+    right: 15,
+    height: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 50,
+    transform: [{ scaleX: 1.2 }],
+  },
   hotWheelsCar: {
     width: 130,
     height: 90,
     position: 'relative',
-  },
-  boostEffect: {
-    position: 'absolute',
-    left: -50,
-    top: 25,
-    zIndex: -1,
-  },
-  boostFlame: {
-    fontSize: 32,
   },
   carBody: {
     position: 'absolute',
@@ -1561,10 +1992,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 10,
     left: -15,
-  },
-  sparkle: {
-    fontSize: 18,
-    opacity: 0.8,
   },
 
   // Question Panel
