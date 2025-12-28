@@ -17,3 +17,4 @@ web-build/
 *.swo
 *~
 .expo-shared/
+.vercel
