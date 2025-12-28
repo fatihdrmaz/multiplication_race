@@ -123,7 +123,7 @@ const generateQuestion = (level = 1) => {
 };
 
 // SPEED LINES BİLEŞENİ
-const SpeedLines = ({ boost = false }) => {
+const SpeedLines = ({ boost = false, styles }) => {
   const lines = useRef([...Array(8)].map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
@@ -168,7 +168,7 @@ const SpeedLines = ({ boost = false }) => {
 };
 
 // PARTİKÜL SİSTEMİ
-const ParticleSystem = ({ active = false, type = 'dust' }) => {
+const ParticleSystem = ({ active = false, type = 'dust', styles }) => {
   const particles = useRef([...Array(12)].map(() => ({
     x: new Animated.Value(0),
     y: new Animated.Value(0),
@@ -241,7 +241,7 @@ const ParticleSystem = ({ active = false, type = 'dust' }) => {
 };
 
 // PARALAKS DAĞLAR
-const ParallaxMountains = () => {
+const ParallaxMountains = ({ styles }) => {
   const scroll = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -272,7 +272,7 @@ const ParallaxMountains = () => {
 };
 
 // GELİŞMİŞ DEKORASYONLAR
-const TrackDecorations = () => {
+const TrackDecorations = ({ styles }) => {
   const [wave, setWave] = useState(0);
 
   useEffect(() => {
@@ -301,7 +301,7 @@ const TrackDecorations = () => {
 };
 
 // YARIŞ PROGRESS BAR
-const RaceProgressBar = ({ playerPosition, opponentPosition }) => {
+const RaceProgressBar = ({ playerPosition, opponentPosition, styles }) => {
   return (
     <View style={styles.progressBar}>
       <View style={styles.progressTrack}>
@@ -331,7 +331,7 @@ const RaceProgressBar = ({ playerPosition, opponentPosition }) => {
 };
 
 // Hot Wheels Araba Bileşeni (GÖLGELİ VERSİYON)
-const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true }) => {
+const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true, styles }) => {
   const wheelRotate = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -396,8 +396,8 @@ const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true }) => 
         styles.hotWheelsCar,
         { transform: [{ translateY: bounceAnim }] }
       ]}>
-        {boost && <ParticleSystem active={boost} type="fire" />}
-        <ParticleSystem active={true} type="dust" />
+        {boost && <ParticleSystem active={boost} type="fire" styles={styles} />}
+        <ParticleSystem active={true} type="dust" styles={styles} />
         
         <LinearGradient
           colors={[car.color, car.secondaryColor]}
@@ -436,7 +436,7 @@ const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true }) => 
 
         {boost && (
           <View style={styles.sparkles}>
-            <ParticleSystem active={boost} type="spark" />
+            <ParticleSystem active={boost} type="spark" styles={styles} />
           </View>
         )}
       </Animated.View>
@@ -445,7 +445,7 @@ const HotWheelsCar = ({ car, position = 0, boost = false, isPlayer = true }) => 
 };
 
 // Gelişmiş Pist Bileşeni
-const RaceTrack = () => {
+const RaceTrack = ({ styles }) => {
   const cloudAnim = useRef(new Animated.Value(0)).current;
   const treeAnim = useRef(new Animated.Value(0)).current;
 
@@ -482,7 +482,7 @@ const RaceTrack = () => {
   return (
     <View style={styles.trackEnvironment}>
       {/* Paralaks Dağlar */}
-      <ParallaxMountains />
+      <ParallaxMountains styles={styles} />
       
       {/* Bulutlar */}
       <Animated.View style={[styles.clouds, { transform: [{ translateX: cloudTranslate }] }]}>
@@ -508,7 +508,7 @@ const RaceTrack = () => {
 };
 
 // Seyirci Bileşeni
-const AnimatedCrowd = () => {
+const AnimatedCrowd = ({ styles }) => {
   const [waveIndex, setWaveIndex] = useState(0);
 
   useEffect(() => {
@@ -1257,16 +1257,17 @@ export default function App() {
               <View style={{ flex: 1 }}>
                 <RaceProgressBar 
                   playerPosition={playerPosition} 
-                  opponentPosition={opponentPosition} 
+                  opponentPosition={opponentPosition}
+                  styles={styles}
                 />
 
                 <View style={styles.raceArea}>
-                  <RaceTrack />
-                  <SpeedLines boost={playerBoost} />
-                  <TrackDecorations />
+                  <RaceTrack styles={styles} />
+                  <SpeedLines boost={playerBoost} styles={styles} />
+                  <TrackDecorations styles={styles} />
                   
                   <View style={styles.topCrowd}>
-                    <AnimatedCrowd />
+                    <AnimatedCrowd styles={styles} />
                   </View>
 
                   <View style={styles.trackContainer}>
@@ -1286,6 +1287,7 @@ export default function App() {
                             name: 'AI Racer'
                           }}
                           isPlayer={false}
+                          styles={styles}
                         />
                         <Text style={styles.carLabel}>AI Rakip</Text>
                       </Animated.View>
@@ -1304,7 +1306,7 @@ export default function App() {
                           },
                         ]}
                       >
-                        <HotWheelsCar car={selectedCar} boost={playerBoost} isPlayer={true} />
+                        <HotWheelsCar car={selectedCar} boost={playerBoost} isPlayer={true} styles={styles} />
                         <Text style={styles.carLabel}>{username}</Text>
                       </Animated.View>
                     </View>
@@ -1317,7 +1319,7 @@ export default function App() {
                   </View>
 
                   <View style={styles.bottomCrowd}>
-                    <AnimatedCrowd />
+                    <AnimatedCrowd styles={styles} />
                   </View>
                 </View>
               </View>
@@ -1328,14 +1330,15 @@ export default function App() {
               {/* Yarış Progress Bar */}
               <RaceProgressBar 
                 playerPosition={playerPosition} 
-                opponentPosition={opponentPosition} 
+                opponentPosition={opponentPosition}
+                styles={styles}
               />
 
               {/* Yarış Alanı */}
               <View style={styles.raceArea}>
-                <RaceTrack />
-                <SpeedLines boost={playerBoost} />
-                <TrackDecorations />
+                <RaceTrack styles={styles} />
+                <SpeedLines boost={playerBoost} styles={styles} />
+                <TrackDecorations styles={styles} />
                 
                 <View style={styles.topCrowd}>
                   <AnimatedCrowd />
@@ -1358,6 +1361,7 @@ export default function App() {
                           name: 'AI Racer'
                         }}
                         isPlayer={false}
+                        styles={styles}
                       />
                       <Text style={styles.carLabel}>AI Rakip</Text>
                     </Animated.View>
@@ -1376,7 +1380,7 @@ export default function App() {
                         },
                       ]}
                     >
-                      <HotWheelsCar car={selectedCar} boost={playerBoost} isPlayer={true} />
+                      <HotWheelsCar car={selectedCar} boost={playerBoost} isPlayer={true} styles={styles} />
                       <Text style={styles.carLabel}>{username}</Text>
                     </Animated.View>
                   </View>
