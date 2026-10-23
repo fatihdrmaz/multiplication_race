@@ -5,7 +5,7 @@ import {
     View,
     TouchableOpacity,
     Animated,
-    Dimensions,
+    Platform,
     StatusBar,
     SafeAreaView
 } from 'react-native';
@@ -20,6 +20,9 @@ import TrackDecorations from '../components/TrackDecorations';
 import AnimatedCrowd from '../components/AnimatedCrowd';
 import RaceProgressBar from '../components/RaceProgressBar';
 import PowerUp from '../components/PowerUp';
+import GameButton from '../components/GameButton';
+import GameOverCard from '../components/GameOverCard';
+import * as Haptics from 'expo-haptics';
 
 // Utils
 import { QuestionEngine } from '../utils/QuestionEngine';
@@ -27,7 +30,15 @@ import { useAudio } from '../utils/audioManager';
 import { THEMES } from '../utils/themes';
 import { saveUserData, updateLeaderboard, saveGameResult } from '../utils/storage';
 
-const { width } = Dimensions.get('window');
+const ANSWER_LOOKS = {
+    idle: { colors: ['#FF8E53', '#FF6B6B'], lip: '#C94B4B' },
+    correct: { colors: ['#6BD66F', '#43A047'], lip: '#2E7D32' },
+    wrong: { colors: ['#FF7B7B', '#E53935'], lip: '#A82828' },
+};
+
+const vibrate = (type) => {
+    if (Platform.OS !== 'web') Haptics.notificationAsync(type);
+};
 
 const GameScreen = ({ navigation, route }) => {
     const { username, selectedCar, userCoins, gameMode = 'race', themeId = 'jungle', gameConfig } = route.params;
@@ -230,6 +241,7 @@ const GameScreen = ({ navigation, route }) => {
 
         if (answer === question.correctAnswer) {
             playSoundEffect('correct');
+            vibrate(Haptics.NotificationFeedbackType.Success);
 
             // Power-up toplama
             if (activePowerUp) {
@@ -274,6 +286,7 @@ const GameScreen = ({ navigation, route }) => {
                 playSoundEffect('boost'); // Kalkan sesi gibi düşünelim
             } else {
                 playSoundEffect('wrong');
+                vibrate(Haptics.NotificationFeedbackType.Error);
                 setConsecutiveCorrect(0);
                 setWrongCount((prev) => prev + 1);
                 setPlayerPosition((prev) => Math.max(0, prev - 8));
@@ -423,60 +436,42 @@ const GameScreen = ({ navigation, route }) => {
                             {question.answers.map((answer, index) => {
                                 const isSelected = selectedAnswer === answer;
                                 const isCorrect = answer === question.correctAnswer;
-                                const showResult = showFeedback && isSelected;
+                                // Geri bildirimde seçilen cevap ve (yanlışsa) doğru cevap renklenir
+                                const state = !showFeedback ? 'idle' : isCorrect ? 'correct' : isSelected ? 'wrong' : 'idle';
+                                const look = ANSWER_LOOKS[state];
                                 return (
-                                    <TouchableOpacity
+                                    <GameButton
                                         key={index}
+                                        size="answer"
+                                        colors={look.colors}
+                                        lipColor={look.lip}
                                         style={styles.answerButton}
                                         onPress={() => handleAnswer(answer)}
-                                        disabled={showFeedback || (gameMode === 'time-trial' && timeLeft === 0)}
                                     >
-                                        <LinearGradient
-                                            colors={showResult && isCorrect ? ['#4CAF50', '#45B649'] : showResult && !isCorrect ? ['#EF5350', '#E53935'] : ['#FF6B6B', '#FF8E53']}
-                                            style={styles.answerGradient}
-                                        >
-                                            <Text style={styles.answerText}>{answer}</Text>
-                                            {showResult && <Text style={styles.answerEmoji}>{isCorrect ? '✅' : '❌'}</Text>}
-                                        </LinearGradient>
-                                    </TouchableOpacity>
+                                        <Text style={styles.answerText}>{answer}</Text>
+                                        {state !== 'idle' && <Text style={styles.answerEmoji}>{isCorrect ? '✅' : '❌'}</Text>}
+                                    </GameButton>
                                 );
                             })}
                         </View>
                     </View>
-
-                    {/* Oyun Sonu */}
-                    {gameStatus !== 'playing' && (
-                        <View style={styles.gameOverOverlay}>
-                            <LinearGradient colors={gameStatus === 'won' ? ['#FFD93D', '#FF6B6B'] : ['#A8DADC', '#457B9D']} style={styles.gameOverCard}>
-                                <Text style={styles.gameOverEmoji}>{gameStatus === 'won' ? '🏆🎉' : '😊💪'}</Text>
-                                <Text style={styles.gameOverTitle}>
-                                    {gameMode === 'time-trial' ? `Süre Doldu! Skor: ${score}` : (gameStatus === 'won' ? `${username} KAZANDI!` : 'Tekrar Dene!')}
-                                </Text>
-
-                                {gameStatus === 'won' && (
-                                    <View style={styles.rewardsContainer}>
-                                        <View style={styles.rewardItem}><Text style={styles.rewardIcon}>⭐</Text><Text style={styles.rewardValue}>+{reward.score}</Text></View>
-                                        <View style={styles.rewardItem}><Text style={styles.rewardIcon}>🪙</Text><Text style={styles.rewardValue}>+{reward.coins}</Text></View>
-                                    </View>
-                                )}
-
-                                <View style={styles.gameOverButtons}>
-                                    <TouchableOpacity style={styles.gameOverButton} onPress={resetGame}>
-                                        <LinearGradient colors={['#4ECDC4', '#44A08D']} style={styles.gameOverButtonGradient}>
-                                            <Text style={styles.gameOverButtonText}>{gameMode === 'time-trial' ? '🏁 Tekrar Yarış' : (gameStatus === 'won' ? '🏁 Sonraki' : '🔄 Tekrar')}</Text>
-                                        </LinearGradient>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity style={styles.gameOverButton} onPress={() => navigation.navigate('CarSelection')}>
-                                        <LinearGradient colors={['#FF6B6B', '#FF8E53']} style={styles.gameOverButtonGradient}>
-                                            <Text style={styles.gameOverButtonText}>🏎️ Araba Değiştir</Text>
-                                        </LinearGradient>
-                                    </TouchableOpacity>
-                                </View>
-                            </LinearGradient>
-                        </View>
-                    )}
                 </Animated.View>
+
+                {/* Oyun Sonu (kamera zoom'undan etkilenmesin diye dışarıda) */}
+                {gameStatus !== 'playing' && (
+                    <GameOverCard
+                        status={gameStatus}
+                        gameMode={gameMode}
+                        username={username}
+                        score={score}
+                        reward={reward}
+                        correct={correctCount}
+                        wrong={wrongCount}
+                        onPrimary={resetGame}
+                        onChangeCar={() => navigation.navigate('CarSelection')}
+                        onHome={() => navigation.popToTop()}
+                    />
+                )}
             </LinearGradient>
         </SafeAreaView>
     );
@@ -566,36 +561,12 @@ const styles = StyleSheet.create({
     questionOperator: { fontSize: 32, fontWeight: 'bold', color: '#FF6B6B' },
     questionMark: { fontSize: 36, fontWeight: 'bold', color: '#4CAF50' },
     answersGrid: { flexDirection: 'row', gap: 10 },
-    answerButton: {
-        flex: 1,
-        height: 70,
-        borderRadius: 15,
-        overflow: 'hidden',
-        elevation: 6,
+    answerButton: { flex: 1 },
+    answerText: {
+        fontSize: 30, fontWeight: '700', color: '#FFF',
+        textShadowColor: 'rgba(0, 0, 0, 0.18)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 0,
     },
-    answerGradient: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    answerText: { fontSize: 28, fontWeight: 'bold', color: '#FFF' },
-    answerEmoji: { fontSize: 20, marginTop: 4 },
-    gameOverOverlay: {
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        justifyContent: 'center', alignItems: 'center', zIndex: 100,
-    },
-    gameOverCard: {
-        width: width * 0.9, borderRadius: 30, padding: 30, alignItems: 'center',
-    },
-    gameOverEmoji: { fontSize: 60, marginBottom: 15 },
-    gameOverTitle: {
-        fontSize: 28, fontWeight: 'bold', color: '#FFF', textAlign: 'center', marginBottom: 20,
-    },
-    rewardsContainer: { flexDirection: 'row', gap: 20, marginBottom: 25 },
-    rewardItem: { alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.3)', padding: 15, borderRadius: 15 },
-    rewardIcon: { fontSize: 24, marginBottom: 5 },
-    rewardValue: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
-    gameOverButtons: { width: '100%', gap: 10 },
-    gameOverButton: { borderRadius: 20, overflow: 'hidden' },
-    gameOverButtonGradient: { paddingVertical: 14, alignItems: 'center' },
-    gameOverButtonText: { fontSize: 16, fontWeight: 'bold', color: '#FFF' },
+    answerEmoji: { fontSize: 18 },
 });
 
 export default GameScreen;

@@ -10,6 +10,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { HOT_WHEELS_CARS } from '../utils/constants';
 import { loadUserData, saveUserData } from '../utils/storage';
+import GameButton from '../components/GameButton';
 
 const CarSelectionScreen = ({ navigation, route }) => {
     const { username, gameMode, themeId, gameConfig } = route.params || {};
@@ -108,18 +109,13 @@ const CarSelectionScreen = ({ navigation, route }) => {
                         }}
                     />
 
-                    <TouchableOpacity
-                        style={[styles.raceButton, !selectedCar && styles.raceButtonDisabled]}
-                        onPress={handleRaceStart}
+                    <GameButton
+                        title="🏁 Yarışa Başla!"
+                        size="lg"
                         disabled={!selectedCar}
-                    >
-                        <LinearGradient
-                            colors={selectedCar ? ['#FF6B6B', '#FF8E53'] : ['#CCC', '#999']}
-                            style={styles.raceGradient}
-                        >
-                            <Text style={styles.raceButtonText}>🏁 Yarışa Başla!</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
+                        onPress={handleRaceStart}
+                        style={styles.raceButton}
+                    />
                 </View>
             </LinearGradient>
         </SafeAreaView>
@@ -221,20 +217,6 @@ const styles = StyleSheet.create({
     },
     raceButton: {
         marginTop: 20,
-        borderRadius: 25,
-        overflow: 'hidden',
-    },
-    raceButtonDisabled: {
-        opacity: 0.5,
-    },
-    raceGradient: {
-        paddingVertical: 20,
-        alignItems: 'center',
-    },
-    raceButtonText: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#FFF',
     },
 });
 

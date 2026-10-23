@@ -1,8 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, Text, Animated } from 'react-native';
+import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import HotWheelsCar from './HotWheelsCar';
 import { HOT_WHEELS_CARS } from '../utils/constants';
 import { THEMES } from '../utils/themes';
+import { useSmoothPosition } from '../utils/useSmoothPosition';
+
+const CAR_WIDTH = 130;
+const CAR_HEIGHT = 110;
+const LABEL_SPACE = 16; // Arabanın altındaki isim etiketi
+
+// Arabayı şeride sığacak kadar küçültüp 0-100 konumuna göre akıcı şekilde kaydırır
+const LaneCar = ({ position, lane, linear, duration, children }) => {
+    const progress = useSmoothPosition(position, { linear, duration });
+
+    const scale = lane.height > 0 ? Math.min(1, lane.height / (CAR_HEIGHT + LABEL_SPACE)) : 1;
+    const travel = Math.max(lane.width - CAR_WIDTH * scale, 0);
+    // scale merkezden uygulandığı için sol kenarı şeridin başına hizala
+    const offset = -((1 - scale) * CAR_WIDTH) / 2;
+    const top = (lane.height - LABEL_SPACE * scale - CAR_HEIGHT) / 2;
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: offset + (progress.value / 100) * travel },
+            { scale },
+        ],
+    }), [offset, travel, scale]);
+
+    return <Reanimated.View style={[styles.carWrapper, { top }, animatedStyle]}>{children}</Reanimated.View>;
+};
 
 const RaceTrack = ({
     playerPosition,
@@ -16,6 +42,7 @@ const RaceTrack = ({
 }) => {
     const theme = THEMES[themeId] || THEMES.jungle;
     const env = theme.trackEnvironment;
+    const [lane, setLane] = useState({ width: 0, height: 0 });
 
     return (
         <View style={[styles.trackContainer, {
@@ -28,9 +55,16 @@ const RaceTrack = ({
             </View>
 
             {/* Rakip Lane - Time Trial'da gizle */}
-            <View style={[styles.topLane, { backgroundColor: env.laneColor }]}>
+            <View
+                style={[styles.topLane, { backgroundColor: env.laneColor }]}
+                onLayout={(e) => {
+                    const { width, height } = e.nativeEvent.layout;
+                    setLane({ width, height });
+                }}
+            >
                 {gameMode === 'race' && (
-                    <Animated.View style={[styles.carWrapper, { left: `${opponentPosition}%` }]}>
+                    // AI her saniye ilerler; 1 sn'lik doğrusal geçiş kesintisiz sürüş verir
+                    <LaneCar position={opponentPosition} lane={lane} linear duration={1000}>
                         <HotWheelsCar
                             car={{
                                 ...HOT_WHEELS_CARS[1],
@@ -41,7 +75,7 @@ const RaceTrack = ({
                             isPlayer={false}
                         />
                         <Text style={styles.carLabel}>AI Rakip</Text>
-                    </Animated.View>
+                    </LaneCar>
                 )}
             </View>
 
@@ -49,18 +83,12 @@ const RaceTrack = ({
 
             {/* Oyuncu Lane */}
             <View style={[styles.bottomLane, { backgroundColor: env.laneColor }]}>
-                <Animated.View
-                    style={[
-                        styles.carWrapper,
-                        {
-                            left: `${playerPosition}%`,
-                            transform: [{ translateX: shakeAnim }],
-                        },
-                    ]}
-                >
-                    <HotWheelsCar car={selectedCar} boost={playerBoost} isPlayer={true} />
-                    <Text style={styles.carLabel}>{username}</Text>
-                </Animated.View>
+                <LaneCar position={playerPosition} lane={lane} duration={700}>
+                    <Animated.View style={[styles.carInner, { transform: [{ translateX: shakeAnim }] }]}>
+                        <HotWheelsCar car={selectedCar} boost={playerBoost} isPlayer={true} />
+                        <Text style={styles.carLabel}>{username}</Text>
+                    </Animated.View>
+                </LaneCar>
             </View>
 
             <View style={styles.finishLine}>
@@ -122,20 +150,21 @@ const styles = StyleSheet.create({
         transform: [{ rotate: '90deg' }],
         marginTop: 10,
     },
+    // Şeritler pist yüksekliğini paylaşır; kısa ekranlarda çakışmaz
     topLane: {
         position: 'absolute',
         left: 70,
         right: 70,
-        top: '28%',
-        height: 110,
+        top: '5%',
+        height: '42%',
         borderRadius: 10,
     },
     bottomLane: {
         position: 'absolute',
         left: 70,
         right: 70,
-        bottom: '28%',
-        height: 110,
+        bottom: '5%',
+        height: '42%',
         borderRadius: 10,
     },
     centerDivider: {
@@ -144,11 +173,16 @@ const styles = StyleSheet.create({
         right: 70,
         top: '50%',
         height: 4,
+        marginTop: -2,
     },
     carWrapper: {
         position: 'absolute',
-        width: 130,
-        height: 110,
+        left: 0,
+        width: CAR_WIDTH,
+        height: CAR_HEIGHT,
+    },
+    carInner: {
+        flex: 1,
     },
     carLabel: {
         position: 'absolute',

@@ -39,6 +39,7 @@ const ParticleSystem = ({ active = false, type = 'dust' }) => {
             });
 
             animations.forEach((anim, i) => {
+                const particle = particles[i];
                 setTimeout(() => anim.start(() => {
                     particle.x.setValue(0);
                     particle.y.setValue(0);

@@ -1,22 +1,32 @@
-import React from 'react';
-import { StyleSheet, View, Text, Animated } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, Text } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { useSmoothPosition } from '../utils/useSmoothPosition';
+
+const Marker = ({ position, trackWidth, linear, duration, children }) => {
+    const progress = useSmoothPosition(position, { linear, duration });
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: (progress.value / 100) * trackWidth }],
+    }), [trackWidth]);
+
+    return <Animated.View style={[styles.progressMarker, animatedStyle]}>{children}</Animated.View>;
+};
 
 const RaceProgressBar = ({ playerPosition, opponentPosition }) => {
+    const [trackWidth, setTrackWidth] = useState(0);
+
     return (
         <View style={styles.progressBar}>
-            <View style={styles.progressTrack}>
-                <Animated.View
-                    style={[styles.progressMarker, { left: `${playerPosition}%` }]}
-                >
+            <View style={styles.progressTrack} onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}>
+                <Marker position={playerPosition} trackWidth={trackWidth} duration={700}>
                     <Text style={styles.progressEmoji}>🏎️</Text>
                     <Text style={styles.progressLabel}>Sen</Text>
-                </Animated.View>
-                <Animated.View
-                    style={[styles.progressMarker, { left: `${opponentPosition}%` }]}
-                >
+                </Marker>
+                <Marker position={opponentPosition} trackWidth={trackWidth} linear duration={1000}>
                     <Text style={styles.progressEmoji}>🤖</Text>
                     <Text style={styles.progressLabel}>AI</Text>
-                </Animated.View>
+                </Marker>
                 <View style={styles.finishMarker}>
                     <Text style={styles.finishMarkerText}>🏁</Text>
                 </View>
@@ -53,6 +63,7 @@ const styles = StyleSheet.create({
     progressMarker: {
         position: 'absolute',
         top: -5,
+        left: 0,
         width: 50,
         height: 50,
         alignItems: 'center',

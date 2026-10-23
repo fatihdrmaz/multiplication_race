@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { HOT_WHEELS_CARS } from '../utils/constants';
 import { THEMES } from '../utils/themes';
 import { saveUserData, loadLeaderboard } from '../utils/storage';
+import GameButton from '../components/GameButton';
 
 const { width, height } = Dimensions.get('window');
 
@@ -105,18 +106,15 @@ const WelcomeScreen = ({ navigation }) => {
                             ))}
                         </View>
 
-                        <TouchableOpacity
-                            style={[styles.startButton, !username && styles.startButtonDisabled]}
-                            onPress={handleStart}
+                        <GameButton
+                            title="🏁 Başla"
+                            size="lg"
+                            colors={['#4ECDC4', '#2BAE9F']}
+                            lipColor="#1E7F74"
                             disabled={!username}
-                        >
-                            <LinearGradient
-                                colors={username ? ['#4ECDC4', '#44A08D'] : ['#CCC', '#999']}
-                                style={styles.startGradient}
-                            >
-                                <Text style={styles.startButtonText}>🏁 Başla</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
+                            onPress={handleStart}
+                            style={styles.startButton}
+                        />
 
                         <View style={styles.footerButtons}>
                             <TouchableOpacity
@@ -294,21 +292,7 @@ const styles = StyleSheet.create({
     },
     startButton: {
         width: '100%',
-        borderRadius: 25,
-        overflow: 'hidden',
         marginBottom: 15,
-    },
-    startButtonDisabled: {
-        opacity: 0.5,
-    },
-    startGradient: {
-        paddingVertical: 15,
-        alignItems: 'center',
-    },
-    startButtonText: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#FFF',
     },
     footerButtons: {
         flexDirection: 'row',
