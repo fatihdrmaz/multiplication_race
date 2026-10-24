@@ -43,7 +43,7 @@ const CarSelectionScreen = ({ navigation, route }) => {
 
     const handleRaceStart = () => {
         if (selectedCar) {
-            navigation.navigate('Game', {
+            navigation.navigate(gameMode === 'lane' ? 'LaneRace' : 'Game', {
                 username,
                 selectedCar,
                 userCoins: coins,

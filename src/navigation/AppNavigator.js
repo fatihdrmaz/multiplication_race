@@ -7,6 +7,7 @@ import CarSelectionScreen from '../screens/CarSelectionScreen';
 import SubjectSelectionScreen from '../screens/SubjectSelectionScreen';
 import ParentDashboardScreen from '../screens/ParentDashboardScreen';
 import GameScreen from '../screens/GameScreen';
+import LaneRaceScreen from '../screens/LaneRaceScreen';
 
 const Stack = createStackNavigator();
 
@@ -26,6 +27,7 @@ const AppNavigator = () => {
                 <Stack.Screen name="ParentDashboard" component={ParentDashboardScreen} />
                 <Stack.Screen name="CarSelection" component={CarSelectionScreen} />
                 <Stack.Screen name="Game" component={GameScreen} />
+                <Stack.Screen name="LaneRace" component={LaneRaceScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

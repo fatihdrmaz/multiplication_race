@@ -20,7 +20,8 @@ const { width, height } = Dimensions.get('window');
 
 const GAME_MODES = [
     { id: 'race', name: 'Yarış', emoji: '🏎️' },
-    { id: 'time-trial', name: 'Zamana Karşı', emoji: '⏱️' }
+    { id: 'time-trial', name: 'Zamana Karşı', emoji: '⏱️' },
+    { id: 'lane', name: 'Şerit', emoji: '🛣️' }
 ];
 
 const WelcomeScreen = ({ navigation }) => {
